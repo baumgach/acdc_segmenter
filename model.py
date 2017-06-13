@@ -46,9 +46,9 @@ def loss(logits, labels, weight_decay=0.00005):
 
     return total_loss, cross_entropy_loss, weights_norm
 
-def predict(images):
+def predict(images, inference_handle):
 
-    logits = inference(images, training=False)
+    logits = inference_handle(images, training=False)
     softmax = tf.nn.softmax(logits)
     mask = tf.arg_max(logits, dimension=3)
 
