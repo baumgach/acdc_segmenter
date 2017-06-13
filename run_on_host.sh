@@ -20,7 +20,7 @@
 
 # Host and gpu settings
 #$ -l gpu
-#$ -l hostname=bmicgpu01
+##$ -l hostname=bmicgpu01   # Comment in or out to force a specific machine
 
 ## stderr and stdout are merged together to stdout
 #$ -j y
