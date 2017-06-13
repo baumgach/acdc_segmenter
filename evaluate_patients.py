@@ -1,4 +1,5 @@
 import utils
+import image_utils
 
 import os
 import glob
@@ -27,7 +28,7 @@ mask, softmax = model.predict(images_placeholder)
 saver = tf.train.Saver()
 init = tf.global_variables_initializer()
 
-def score_data(input_folder, output_folder):
+def score_data(input_folder, output_folder, model_path):
 
     nx = 288
     ny = 288
@@ -68,7 +69,7 @@ def score_data(input_folder, output_folder):
                     img = img_dat[0]
                     mask = mask_dat[0]
 
-                    img = utils.normalise_image(img)
+                    img = image_utils.normalise_image(img)
 
                     pixel_size = (img_dat[2].structarr['pixdim'][1], img_dat[2].structarr['pixdim'][2])
 
@@ -78,13 +79,13 @@ def score_data(input_folder, output_folder):
                     for zz in range(img.shape[2]):
 
                         slice_img = np.squeeze(img[:,:,zz])
-                        slice_rescaled = utils.rescale_image(slice_img, pixel_size)
+                        slice_rescaled = image_utils.rescale_image(slice_img, pixel_size)
 
                         x, y = slice_rescaled.shape
 
                         if x > 500:
                             print('W: Buggy case downscaling by factor 2')
-                            slice_rescaled = utils.rescale_image(slice_rescaled, (0.5, 0.5))
+                            slice_rescaled = image_utils.rescale_image(slice_rescaled, (0.5, 0.5))
                             x, y = slice_rescaled.shape
 
                         x_s = (x - nx) // 2
@@ -104,7 +105,7 @@ def score_data(input_folder, output_folder):
                             else:
                                 slice_cropped[x_c:x_c+x, y_c:y_c + y] = slice_rescaled[:, :]
 
-                        prediction_cropped = np.squeeze(get_prediction_for_image(slice_cropped))
+                        prediction_cropped = np.squeeze(get_prediction_for_image(slice_cropped, model_path))
                         slice_predictions = np.zeros((x,y))
 
                         # insert cropped region into original image again
@@ -119,7 +120,7 @@ def score_data(input_folder, output_folder):
                                 slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y, :]
 
                         # prediction = utils.rescale_image(slice_predictions, (1.0 / pixel_size[0], 1.0 / pixel_size[1]))
-                        prediction = utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
+                        prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
 
                         predictions.append(prediction)
 
@@ -147,7 +148,7 @@ def score_data(input_folder, output_folder):
                     utils.save_nii(gt_file_name, mask, out_affine, out_header)
 
 
-def get_prediction_for_image(img):
+def get_prediction_for_image(img, model_path):
 
     nx = img.shape[0]
     ny = img.shape[1]
@@ -157,11 +158,7 @@ def get_prediction_for_image(img):
     with tf.Session() as sess:
 
         sess.run(init)
-        # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir3/concat_3pool_newsched3'))
-        # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir3/lisa_net_deeper'))
-        # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir3/lisa_net'))
-        # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir3/lisa_net_deeper_wd_new_0.00000'))
-        saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir3/lisa_net_deeper_rerun_unreg_loss'))
+        saver.restore(sess, tf.train.latest_checkpoint(model_path))
 
         feed_dict = {
             images_placeholder: img,
@@ -191,8 +188,10 @@ if __name__ == '__main__':
     n_x = 288
     n_y = 288
 
+    model_path = './acdc_logdir3/lisa_net_deeper_rerun_unreg_loss'
+
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge/'
-    output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge/prediction_data3/'
+    output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge/prediction_data/'
 
     path_pred = os.path.join(output_path, 'prediction')
     path_gt = os.path.join(output_path, 'ground_truth')
@@ -200,10 +199,9 @@ if __name__ == '__main__':
     utils.makefolder(path_gt)
     utils.makefolder(path_pred)
 
-    score_data(input_path, output_path)
+    score_data(input_path, output_path, model_path)
 
     import metrics_acdc_nocsv
-
     [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)
 
     print('Dice 1: %f' % dice1)

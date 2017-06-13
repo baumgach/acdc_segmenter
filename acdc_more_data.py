@@ -1,4 +1,5 @@
 import utils
+import image_utils
 
 import os
 import glob
@@ -94,24 +95,24 @@ class DataMakerACDC:
                     img = img_dat[0]
                     mask = mask_dat[0]
 
-                    img = utils.normalise_image(img)
+                    img = image_utils.normalise_image(img)
 
                     pixel_size = (img_dat[2].structarr['pixdim'][1], img_dat[2].structarr['pixdim'][2])
 
                     for zz in range(img.shape[2]):
 
                         slice_img = np.squeeze(img[:,:,zz])
-                        slice_rescaled = utils.rescale_image(slice_img, pixel_size)
+                        slice_rescaled = image_utils.rescale_image(slice_img, pixel_size)
 
                         slice_mask = np.squeeze(mask[:,:,zz])
-                        mask_rescaled = utils.rescale_image(slice_mask, pixel_size, interp=cv2.INTER_NEAREST)
+                        mask_rescaled = image_utils.rescale_image(slice_mask, pixel_size, interp=cv2.INTER_NEAREST)
 
                         x, y = slice_rescaled.shape
 
                         if x > 500:
                             print('W: Buggy case downscaling by factor 2')
-                            slice_rescaled = utils.rescale_image(slice_rescaled, (0.5, 0.5))
-                            mask_rescaled = utils.rescale_image(mask_rescaled, (0.5, 0.5), interp=cv2.INTER_NEAREST)
+                            slice_rescaled = image_utils.rescale_image(slice_rescaled, (0.5, 0.5))
+                            mask_rescaled = image_utils.rescale_image(mask_rescaled, (0.5, 0.5), interp=cv2.INTER_NEAREST)
                             x, y = slice_rescaled.shape
 
                         x_s = (x - self.n_x) // 2

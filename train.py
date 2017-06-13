@@ -21,19 +21,21 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 ### GLOBAL TRAINING SETTINGS: #####################################################
 
 PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_reg0.00005_lr0.001_aug')
-# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/debug')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn')
 
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
 MODEL_HANDLE = model_zoo.lisa_net_deeper
 OPTIMIZER_HANDLE = tf.train.AdamOptimizer
-SCHEDULE_LR = False
+# OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
+SCHEDULE_LR = True
+WARMUP_TRAINING = False
 AUGMENT_BATCH = True
 WEIGHT_DECAY = 0.00005
 
-### GLOBAL CONSTANTS
+### GLOBAL CONSTANTS: #############################################################
 IMAGE_SIZE = (288, 288)
 NLABELS = 4
 MAX_EPOCHS = 20000
@@ -259,9 +261,9 @@ def run_training():
 
                 # logging.info('step: %d' % step)
 
-                if SCHEDULE_LR:
+                if SCHEDULE_LR and WARMUP_TRAINING:
                     if step < 50:
-                        curr_lr = 0.01
+                        curr_lr = LEARNING_RATE / 10.0
                     elif step == 50:
                         curr_lr = LEARNING_RATE
 
