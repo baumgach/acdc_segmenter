@@ -21,17 +21,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 ### GLOBAL TRAINING SETTINGS: #####################################################
 
 PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
-# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn2')
 
-BATCH_SIZE = 32
-LEARNING_RATE = 0.001
+BATCH_SIZE = 20
+LEARNING_RATE = 0.1
 DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
-MODEL_HANDLE = model_zoo.lisa_net_deeper
-OPTIMIZER_HANDLE = tf.train.AdamOptimizer
-# OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
+MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
+# OPTIMIZER_HANDLE = tf.train.AdamOptimizer
+OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
 SCHEDULE_LR = True
-WARMUP_TRAINING = False
+WARMUP_TRAINING = True
 AUGMENT_BATCH = True
 WEIGHT_DECAY = 0.00005
 
@@ -39,6 +39,7 @@ WEIGHT_DECAY = 0.00005
 IMAGE_SIZE = (288, 288)
 NLABELS = 4
 MAX_EPOCHS = 20000
+SCHEDULE_GRADIENT_THRESHOLD = 0.00005
 ###################################################################################
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
@@ -338,11 +339,11 @@ def run_training():
                     loss_history.append(train_loss)
                     if len(loss_history) > 3:
                         loss_history.pop(0)
-                        loss_gradient = np.abs((loss_history[-1]-loss_history[-2])+(loss_history[-2]-loss_history[-3]))/2
+                        loss_gradient = (loss_history[-3]-loss_history[-1])/2
 
                     logging.info('loss gradient is currently %f' % loss_gradient)
 
-                    if SCHEDULE_LR and loss_gradient < 0.000001:
+                    if SCHEDULE_LR and loss_gradient < SCHEDULE_GRADIENT_THRESHOLD:
                         logging.warning('Reducing learning rate!')
                         curr_lr /= 10.0
                         logging.info('Learning rate changed to: %f' % curr_lr)
