@@ -24,7 +24,7 @@ PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn2')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_4pool_adam_reg0.00005_lr0.001_aug')
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
 
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
