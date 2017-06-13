@@ -23,7 +23,7 @@ def inference(images, inference_handle, training=True):
     return inference_handle(images, training)
 
 
-def loss(logits, labels, weight_decay=0.00005):
+def loss(logits, labels, weight_decay=0.00005, loss_type='weighted_crossentropy'):
 
     with tf.variable_scope('weights_norm') as scope:
 
@@ -37,14 +37,23 @@ def loss(logits, labels, weight_decay=0.00005):
 
     #tf.add_to_collection('losses', weights_norm)
 
-    cross_entropy_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels, class_weights=[0.1, 0.3, 0.3, 0.3])
+    if loss_type == 'weighted_crossentropy':
+        segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
+                                                                          class_weights=[0.1, 0.3, 0.3, 0.3])
+    elif loss_type == 'crossentropy':
+        segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
+                                                                          class_weights=[0.25, 0.25, 0.25, 0.25])
+    elif loss_type == 'dice':
+        segmentation_loss = losses.dice_loss(logits, labels)
+    else:
+        raise ValueError('Unknown loss: %s' % loss_type)
 
     #tf.add_to_collection('losses', cross_entropy_loss)
 
     #total_loss = tf.add_n(tf.get_collection('losses'), name='total_loss')
-    total_loss = tf.add(cross_entropy_loss, weights_norm)
+    total_loss = tf.add(segmentation_loss, weights_norm)
 
-    return total_loss, cross_entropy_loss, weights_norm
+    return total_loss, segmentation_loss, weights_norm
 
 def predict(images, inference_handle):
 
