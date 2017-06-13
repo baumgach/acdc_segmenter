@@ -36,9 +36,11 @@ MODEL_HANDLE = model_zoo.lisa_net_deeper
 # MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
 OPTIMIZER_HANDLE = tf.train.AdamOptimizer
 # OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
+LOSS_TYPE = 'dice'
 SCHEDULE_LR = True
 WARMUP_TRAINING = True
 AUGMENT_BATCH = True
+
 WEIGHT_DECAY = 0.00005
 
 ### GLOBAL CONSTANTS: #############################################################
@@ -207,7 +209,7 @@ def run_training():
         logits = model.inference(images_placeholder, MODEL_HANDLE, training=training_time_placeholder)
 
         # Add to the Graph the Ops for loss calculation.
-        [loss, _, weights_norm] = model.loss(logits, labels_placeholder, weight_decay=WEIGHT_DECAY, loss_type='dice')  # second output is unregularised loss
+        [loss, _, weights_norm] = model.loss(logits, labels_placeholder, weight_decay=WEIGHT_DECAY, loss_type=LOSS_TYPE)  # second output is unregularised loss
 
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('weights_norm_term', weights_norm)
