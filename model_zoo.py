@@ -197,6 +197,44 @@ def lisa_net_one_more_pool(images, training):
 
     return conv14
 
+def lisa_net_3pool_stack_convs(images, training):
+
+    # Not fully investigated yet
+
+    conv1 = layers.conv2D_layer(images, 'conv1', num_filters=16)
+    conv2 = layers.conv2D_layer(conv1, 'conv2', num_filters=16)
+    conv3 = layers.conv2D_layer(conv2, 'conv3', num_filters=16)
+
+    pool1 = layers.max_pool_layer(conv3)
+
+    conv4 = layers.conv2D_dilated_layer(pool1, 'conv4', num_filters=32, rate=2)
+    conv5 = layers.conv2D_dilated_layer(conv4, 'conv5', num_filters=32, rate=4)
+    conv6 = layers.conv2D_dilated_layer(conv5, 'conv6', num_filters=32, rate=8)
+
+    pool2 = layers.max_pool_layer(conv6)
+
+    conv7 = layers.conv2D_layer(pool2, 'conv7', num_filters=64)
+    conv8 = layers.conv2D_layer(conv7, 'conv8', num_filters=64)
+    conv9 = layers.conv2D_layer(conv8, 'conv9', num_filters=64)
+
+    pool3 = layers.max_pool_layer(conv9)
+
+    conv10 = layers.conv2D_layer(pool3, 'conv10', num_filters=128)
+    conv11 = layers.conv2D_layer(conv10, 'conv11', num_filters=128)
+    conv12 = layers.conv2D_layer(conv11, 'conv12', num_filters=128)
+
+    deco4 = layers.deconv2D_layer(conv12, name='deco4', kernel_size=(16, 16), strides=(8, 8), num_filters=32)
+    deco3 = layers.deconv2D_layer(conv9, name='deco3', kernel_size=(8, 8), strides=(4, 4), num_filters=32)
+    deco2 = layers.deconv2D_layer(conv6, name='deco2', kernel_size=(4, 4), strides=(2, 2), num_filters=32)
+    deco1 = layers.deconv2D_layer(conv3, name='deco1', kernel_size=(2, 2), strides=(1, 1), num_filters=32)
+
+    stack = tf.concat([deco1, deco2, deco3, deco4], axis=3, name='stacked')
+
+    conv13 = layers.conv2D_layer(stack, 'conv13', num_filters=64, kernel_size=(1, 1))
+    conv14 = layers.conv2D_layer(conv13, 'conv14', num_filters=NUM_CLASSES, kernel_size=(1, 1),
+                                    activation=layers.no_activation)
+
+    return conv14
 
 def dialated_convs_nopool(images, training):
 
