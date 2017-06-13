@@ -22,20 +22,21 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
-# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn2')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.1_aug_newbn')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_4pool_adam_reg0.00005_lr0.001_aug')
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/debug')
 
-BATCH_SIZE = 32
-LEARNING_RATE = 0.001
+BATCH_SIZE = 20
+LEARNING_RATE = 0.1
 DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
-# MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
+MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
 # MODEL_HANDLE = model_zoo.lisa_net_one_more_pool
-MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
+# MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
 OPTIMIZER_HANDLE = tf.train.AdamOptimizer
 # OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
 SCHEDULE_LR = True
-WARMUP_TRAINING = False
+WARMUP_TRAINING = True
 AUGMENT_BATCH = True
 WEIGHT_DECAY = 0.00005
 
@@ -354,6 +355,10 @@ def run_training():
                         logging.warning('Reducing learning rate!')
                         curr_lr /= 10.0
                         logging.info('Learning rate changed to: %f' % curr_lr)
+
+                        # reset loss history to give the optimisation some time to start decreasing again
+                        loss_gradient = np.inf
+                        loss_history = []
 
                     if val_loss <= best_val:
 

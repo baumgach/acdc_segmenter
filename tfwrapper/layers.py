@@ -178,9 +178,37 @@ def conv2D_dilated_layer(bottom,
 
 ### BATCH_NORM SHORTCUTS #####################################################################################
 
+
 def batch_normalisation_layer(bottom, name, training):
-    # TODO: This one is a bit pointless: Either add variable summaries or remove
-    return tf.layers.batch_normalization(bottom, name=name, training=training)
+    """
+    Batch normalization on feedforward maps. (Adapted from https://github.com/tensorflow/tensorflow/issues/1122)
+    Args:
+        bottom:      input from last layer
+        name:        name of layer
+        training:    boolean tf.Variable, true indicates training phase (Note: cannot be a simple Python bool)
+    Return:
+        normed:      batch-normalized maps
+    """
+    with tf.variable_scope(name):
+
+        n_out = bottom.get_shape().as_list()[-1]
+
+        init_beta = tf.constant(0.0, shape=[n_out], dtype=tf.float32)
+        init_gamma = tf.constant(1.0, shape=[n_out],dtype=tf.float32)
+        beta = tf.get_variable(name=name+'_beta', dtype=tf.float32, initializer=init_beta, regularizer=None, trainable=True)
+        gamma = tf.get_variable(name=name+'_gamma', dtype=tf.float32, initializer=init_gamma, regularizer=None, trainable=True)
+        batch_mean, batch_var = tf.nn.moments(bottom, [0], name=name+'_moments')
+        ema = tf.train.ExponentialMovingAverage(decay=0.5)
+
+        def mean_var_with_update():
+            ema_apply_op = ema.apply([batch_mean, batch_var])
+            with tf.control_dependencies([ema_apply_op]):
+                return tf.identity(batch_mean), tf.identity(batch_var)
+
+        mean, var = tf.cond(training, mean_var_with_update, lambda: (ema.average(batch_mean), ema.average(batch_var)))
+        normed = tf.nn.batch_normalization(bottom, mean, var, beta, gamma, 1e-3)
+
+    return normed
 
 def conv2D_layer_bn(bottom,
                     name,

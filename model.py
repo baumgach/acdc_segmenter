@@ -48,7 +48,7 @@ def loss(logits, labels, weight_decay=0.00005):
 
 def predict(images, inference_handle):
 
-    logits = inference_handle(images, training=False)
+    logits = inference_handle(images, training=tf.constant(False, dtype=tf.bool))
     softmax = tf.nn.softmax(logits)
     mask = tf.arg_max(logits, dimension=3)
 
@@ -62,10 +62,6 @@ def training(loss, optimizer_handle, learning_rate, **kwargs):
         optimizer = optimizer_handle(learning_rate=learning_rate, momentum=momentum)
     else:
         optimizer = optimizer_handle(learning_rate=learning_rate)
-
-    #optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-    # optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
-    # optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
     # Create a variable to track the global step.
     global_step = tf.Variable(0, name='global_step', trainable=False)
