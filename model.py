@@ -76,7 +76,7 @@ def training(loss, optimizer_handle, learning_rate, **kwargs):
 
 def evaluation(logits, labels):
 
-    mask = tf.arg_max(tf.nn.softmax(logits, dim=3), dimension=3)
+    mask = tf.arg_max(tf.nn.softmax(logits, dim=-1), dimension=3)
     mask_gt = tf.arg_max(labels, dimension=3)
 
 
