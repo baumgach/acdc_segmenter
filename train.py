@@ -95,16 +95,6 @@ def do_eval(sess,
     return avg_loss, avg_dice
 
 
-def shuffle_data(images, labels):
-
-    random_indices = np.arange(images.shape[0])
-    np.random.shuffle(random_indices)
-    images = images[random_indices, ...]
-    labels = labels[random_indices, ...]
-
-    return images, labels
-
-
 def augmentation_function(images, labels):
 
     # TODO: Create kwargs with augmentation options
@@ -136,8 +126,17 @@ def augmentation_function(images, labels):
 
 
 def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
+    """
 
-    images, labels = shuffle_data(images, labels)
+    :param images: hdf5 dataset
+    :param labels: hdf5 dataset
+    :param batch_size: batch size
+    :param augment_batch: should batch be augmented?
+    :return:
+    """
+
+    random_indices = np.arange(images.shape[0])
+    np.random.shuffle(random_indices)
 
     n_images = images.shape[0]
 
@@ -146,8 +145,13 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
         if b_i + batch_size > n_images:
             continue
 
-        X = images[b_i:b_i+batch_size, ...]
-        y = labels[b_i:b_i+batch_size, ...]
+        # HDF5 requires indices to be in increasing order
+        batch_indices = np.sort(random_indices[b_i:b_i+batch_size])
+
+        X = images[batch_indices, ...]
+        y = labels[batch_indices, ...]
+
+        X = np.reshape(X, (X.shape[0], IMAGE_SIZE[0], IMAGE_SIZE[1], 1))
 
         if augment_batch:
             X, y = augmentation_function(X, y)
@@ -164,14 +168,13 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
 def run_training():
 
     data = h5py.File(os.path.join(PROJECT_ROOT, DATA_FILE), 'r')
-    images_train = data['images_train'][:]
-    labels_train = data['masks_train'][:]
 
-    images_val = data['images_test'][:]
-    labels_val = data['masks_test'][:]
+    # the following are HDF5 datasets, not numpy arrays
+    images_train = data['images_train']
+    labels_train = data['masks_train']
 
-    images_train = np.reshape(images_train, (images_train.shape[0], IMAGE_SIZE[0], IMAGE_SIZE[1], 1))
-    images_val = np.reshape(images_val, (images_val.shape[0], IMAGE_SIZE[0], IMAGE_SIZE[1], 1))
+    images_val = data['images_test']
+    labels_val = data['masks_test']
 
     logging.info('Data summary:')
     logging.info(' - Images:')
