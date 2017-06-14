@@ -5,6 +5,7 @@ import numpy as np
 import h5py
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax
+import model_zoo
 
 def placeholder_inputs(batch_size):
 
@@ -19,7 +20,9 @@ labels_val = data['masks_test'][:]
 images_val = np.reshape(images_val, (images_val.shape[0], 288, 288, 1))
 
 images_placeholder, labels_placeholder = placeholder_inputs(1)
-mask, softmax = model.predict(images_placeholder)
+
+inference_handle = model_zoo.lisa_net_deeper
+mask, softmax = model.predict(images_placeholder, inference_handle)
 
 saver = tf.train.Saver()
 
@@ -29,7 +32,8 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
 
     sess.run(init)
-    saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir3/concat_3pool_newsched3'))
+    # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn'))
+    saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug_refunweighted'))
 
     while True:
 
