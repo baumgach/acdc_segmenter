@@ -23,22 +23,22 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
 INIT_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.0001_aug_refdice')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.001_aug_refunweighted')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_4pool_adam_reg0.00005_lr0.001_aug')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/debug')
 
 BATCH_SIZE = 32
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
 MODEL_HANDLE = model_zoo.lisa_net_deeper
 # MODEL_HANDLE = model_zoo.lisa_net_one_more_pool
 # MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
-OPTIMIZER_HANDLE = tf.train.AdamOptimizer
-# OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
-LOSS_TYPE = 'dice'
+# OPTIMIZER_HANDLE = tf.train.AdamOptimizer
+OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
+LOSS_TYPE = 'crossentropy'  # crossentropy, weighted_crossentropy, dice
 SCHEDULE_LR = True
-WARMUP_TRAINING = True
+WARMUP_TRAINING = False
 AUGMENT_BATCH = True
 
 WEIGHT_DECAY = 0.00005

@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.1_aug_newbn')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_mom0.5_sched_reg0.00005_lr0.1_aug_newbn2')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_4pool_adam_reg0.00005_lr0.001_aug')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/debug')
@@ -33,12 +33,14 @@ DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
 MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
 # MODEL_HANDLE = model_zoo.lisa_net_one_more_pool
 # MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
-OPTIMIZER_HANDLE = tf.train.AdamOptimizer
+# OPTIMIZER_HANDLE = tf.train.AdamOptimizer
 # OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
+OPTIMIZER_HANDLE = tf.train.MomentumOptimizer
 SCHEDULE_LR = True
 WARMUP_TRAINING = True
 AUGMENT_BATCH = True
 WEIGHT_DECAY = 0.00005
+MOMENTUM = 0.5
 
 ### GLOBAL CONSTANTS: #############################################################
 IMAGE_SIZE = (288, 288)
@@ -212,7 +214,10 @@ def run_training():
         tf.summary.scalar('weights_norm_term', weights_norm)
 
         # Add to the Graph the Ops that calculate and apply gradients.
-        train_op = model.training(loss, OPTIMIZER_HANDLE, learning_rate_placeholder)
+        if MOMENTUM is not None:
+            train_op = model.training(loss, OPTIMIZER_HANDLE, learning_rate_placeholder, momentum=MOMENTUM)
+        else:
+            train_op = model.training(loss, OPTIMIZER_HANDLE, learning_rate_placeholder)
 
         # Add the Op to compare the logits to the labels during evaluation.
         eval_loss = model.evaluation(logits, labels_placeholder)
@@ -345,9 +350,9 @@ def run_training():
                     summary_writer.add_summary(val_summary_msg, step)
 
                     loss_history.append(train_loss)
-                    if len(loss_history) > 3:
+                    if len(loss_history) > 5:
                         loss_history.pop(0)
-                        loss_gradient = (loss_history[-3]-loss_history[-1])/2
+                        loss_gradient = (loss_history[-5]-loss_history[-1])/2
 
                     logging.info('loss gradient is currently %f' % loss_gradient)
 

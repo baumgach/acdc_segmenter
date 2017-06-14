@@ -217,9 +217,11 @@ if __name__ == '__main__':
     # model_path = './good_models/lisa_net_deeper_wd_new_0.00000' # 0.822012
     # model_path = './acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn2'  # 0.740749 (early stop)
     # model_path = './good_models/lisa_net_deeper_autosched_mom_reg0.00005_lr0.1_bn'  # 0.813045
-    model_path = './acdc_logdir/debug'
+    model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.0001_aug_refdice' # 0.799363  --> refinement made it slighly worse...
+    model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug' #  0.800794
 
-    inference_handle = model_zoo.lisa_net_deeper_bn
+    inference_handle = model_zoo.lisa_net_deeper
+    # inference_handle = model_zoo.lisa_net_deeper_bn
     # inference_handle = model_zoo.dilation_after_max_pool
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge/'

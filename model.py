@@ -67,7 +67,7 @@ def predict(images, inference_handle):
 def training(loss, optimizer_handle, learning_rate, **kwargs):
 
     if 'momentum' in kwargs:
-        momentum = kwargs.get('momentum', 0.9)
+        momentum = kwargs.get('momentum')
         optimizer = optimizer_handle(learning_rate=learning_rate, momentum=momentum)
     else:
         optimizer = optimizer_handle(learning_rate=learning_rate)
