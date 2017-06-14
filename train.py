@@ -21,32 +21,36 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 ### GLOBAL TRAINING SETTINGS: #####################################################
 
 PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
-# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug')
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_mom0.5_sched_reg0.00005_lr0.1_aug_newbn2')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_adam_nosched_reg0.00000_lr0.01_aug_newbn_moredata')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_4pool_adam_reg0.00005_lr0.001_aug')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/debug')
 
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/sononet16_adam_reg0.00005_lr0.01_aug_newbn')
+
 BATCH_SIZE = 20
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.01
 DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
-MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
+# MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
+MODEL_HANDLE = model_zoo.SonoNet32
 # MODEL_HANDLE = model_zoo.lisa_net_one_more_pool
 # MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
-# OPTIMIZER_HANDLE = tf.train.AdamOptimizer
+OPTIMIZER_HANDLE = tf.train.AdamOptimizer
 # OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
-OPTIMIZER_HANDLE = tf.train.MomentumOptimizer
-SCHEDULE_LR = True
-WARMUP_TRAINING = True
+# OPTIMIZER_HANDLE = tf.train.MomentumOptimizer
+SCHEDULE_LR = False
+WARMUP_TRAINING = False
 AUGMENT_BATCH = True
 WEIGHT_DECAY = 0.00005
-MOMENTUM = 0.5
+MOMENTUM = None  #0.9
 
 ### GLOBAL CONSTANTS: #############################################################
 IMAGE_SIZE = (288, 288)
 NLABELS = 4
 MAX_EPOCHS = 20000
 SCHEDULE_GRADIENT_THRESHOLD = 0.00001
+EVAL_FREQUENCY = 100
 ###################################################################################
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
@@ -314,7 +318,7 @@ def run_training():
                     summary_writer.flush()
 
                 # Save a checkpoint and evaluate the model periodically.
-                if (step + 1) % 100 == 0:
+                if (step + 1) % EVAL_FREQUENCY == 0:
 
                     checkpoint_file = os.path.join(LOG_DIR, 'model.ckpt')
                     saver.save(sess, checkpoint_file, global_step=step)
