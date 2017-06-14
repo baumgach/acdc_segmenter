@@ -218,7 +218,7 @@ def conv2D_layer_bn(bottom,
                     activation=tf.nn.relu,
                     padding="SAME",
                     weight_init='he_normal',
-                    training=True):
+                    training=tf.constant(True, dtype=tf.bool)):
 
     conv = conv2D_layer(bottom=bottom,
                         name=name,
@@ -244,7 +244,7 @@ def deconv2D_layer_bn(bottom,
                       activation=tf.nn.relu,
                       padding="SAME",
                       weight_init='he_normal',
-                      training=True):
+                      training=tf.constant(True, dtype=tf.bool)):
 
     deco = deconv2D_layer(bottom=bottom,
                           name=name,
@@ -270,7 +270,7 @@ def conv2D_dilated_layer_bn(bottom,
                            activation=tf.nn.relu,
                            padding="SAME",
                            weight_init='he_normal',
-                           training=True):
+                           training=tf.constant(True, dtype=tf.bool)):
 
     conv = conv2D_dilated_layer(bottom=bottom,
                                 name=name,
