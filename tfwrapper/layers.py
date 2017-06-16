@@ -1,6 +1,8 @@
 import tensorflow as tf
 import math
 
+import numpy as np
+
 from tfwrapper import utils
 
 def no_activation(x):
@@ -36,7 +38,8 @@ def conv2D_layer(bottom,
                  strides=(1,1),
                  activation=tf.nn.relu,
                  padding="SAME",
-                 weight_init='he_normal'):
+                 weight_init='he_normal',
+                 **kwargs):
 
     bottom_num_filters = bottom.get_shape().as_list()[3]
     # bottom_num_filters = tf.shape(bottom)[3]
@@ -79,7 +82,8 @@ def deconv2D_layer(bottom,
                    output_shape=None,
                    activation=tf.nn.relu,
                    padding="SAME",
-                   weight_init='he_normal'):
+                   weight_init='he_normal',
+                   **kwargs):
 
 
     # bottom_shape = bottom.get_shape().as_list()[1:]
@@ -116,6 +120,8 @@ def deconv2D_layer(bottom,
             weights = _weight_variable_he_normal(weight_shape, N, name=name + '_w')
         elif weight_init =='simple':
             weights = _weight_variable_simple(weight_shape, name=name + '_w')
+        elif weight_init == 'bilinear':
+            weights = _weight_variable_bilinear(weight_shape, name=name + '_w')
         else:
             raise ValueError('Unknown weight initialisation method %s' % weight_init)
 
@@ -144,7 +150,8 @@ def conv2D_dilated_layer(bottom,
                          rate=1,
                          activation=tf.nn.relu,
                          padding="SAME",
-                         weight_init='he_normal'):
+                         weight_init='he_normal',
+                         **kwargs):
 
     bottom_num_filters = bottom.get_shape().as_list()[3]
     # bottom_num_filters = tf.shape(bottom)[3]
@@ -179,7 +186,7 @@ def conv2D_dilated_layer(bottom,
 ### BATCH_NORM SHORTCUTS #####################################################################################
 
 
-def batch_normalisation_layer(bottom, name, training):
+def batch_normalisation_layer(bottom, name, training, **kwargs):
     """
     Batch normalization on feedforward maps. (Adapted from https://github.com/tensorflow/tensorflow/issues/1122)
     Args:
@@ -192,12 +199,18 @@ def batch_normalisation_layer(bottom, name, training):
     with tf.variable_scope(name):
 
         n_out = bottom.get_shape().as_list()[-1]
+        tensor_dim = len(bottom.get_shape().as_list())
+
+        is_conv_layer = True if tensor_dim == 4 else False
 
         init_beta = tf.constant(0.0, shape=[n_out], dtype=tf.float32)
         init_gamma = tf.constant(1.0, shape=[n_out],dtype=tf.float32)
         beta = tf.get_variable(name=name+'_beta', dtype=tf.float32, initializer=init_beta, regularizer=None, trainable=True)
         gamma = tf.get_variable(name=name+'_gamma', dtype=tf.float32, initializer=init_gamma, regularizer=None, trainable=True)
-        batch_mean, batch_var = tf.nn.moments(bottom, [0], name=name+'_moments')
+
+        moments_over_axes = [0,1,2] if is_conv_layer else [0]
+
+        batch_mean, batch_var = tf.nn.moments(bottom, moments_over_axes, name=name+'_moments')
         ema = tf.train.ExponentialMovingAverage(decay=0.5)
 
         def mean_var_with_update():
@@ -210,6 +223,7 @@ def batch_normalisation_layer(bottom, name, training):
 
     return normed
 
+
 def conv2D_layer_bn(bottom,
                     name,
                     kernel_size=(3,3),
@@ -218,7 +232,8 @@ def conv2D_layer_bn(bottom,
                     activation=tf.nn.relu,
                     padding="SAME",
                     weight_init='he_normal',
-                    training=tf.constant(True, dtype=tf.bool)):
+                    training=tf.constant(False, dtype=tf.bool),
+                    **kwargs):
 
     conv = conv2D_layer(bottom=bottom,
                         name=name,
@@ -244,7 +259,8 @@ def deconv2D_layer_bn(bottom,
                       activation=tf.nn.relu,
                       padding="SAME",
                       weight_init='he_normal',
-                      training=tf.constant(True, dtype=tf.bool)):
+                      training=tf.constant(True, dtype=tf.bool),
+                      **kwargs):
 
     deco = deconv2D_layer(bottom=bottom,
                           name=name,
@@ -270,7 +286,8 @@ def conv2D_dilated_layer_bn(bottom,
                            activation=tf.nn.relu,
                            padding="SAME",
                            weight_init='he_normal',
-                           training=tf.constant(True, dtype=tf.bool)):
+                           training=tf.constant(True, dtype=tf.bool),
+                            **kwargs):
 
     conv = conv2D_dilated_layer(bottom=bottom,
                                 name=name,
@@ -293,7 +310,8 @@ def dense_layer(bottom,
                 name,
                 hidden_units=512,
                 activation=tf.nn.relu,
-                weight_init='he_normal'):
+                weight_init='he_normal',
+                **kwargs):
 
     bottom_flat = utils.flatten(bottom)
     bottom_rhs_dim = utils.get_rhs_dim(bottom_flat)
@@ -328,7 +346,7 @@ def dense_layer(bottom,
 
 def _weight_variable_simple(shape, stddev=0.02, name=None):
 
-    initial = tf.truncated_normal(shape, stddev=stddev)
+    initial = tf.truncated_normal(shape, stddev=stddev, dtype=tf.float32)
     if name is None:
         weight = tf.Variable(initial)
     else:
@@ -342,7 +360,7 @@ def _weight_variable_he_normal(shape, N, name=None):
 
     stddev = math.sqrt(2.0/float(N))
 
-    initial = tf.truncated_normal(shape, stddev=stddev)
+    initial = tf.truncated_normal(shape, stddev=stddev, dtype=tf.float32)
     if name is None:
         weight = tf.Variable(initial)
     else:
@@ -354,10 +372,54 @@ def _weight_variable_he_normal(shape, N, name=None):
 
 
 def _bias_variable(shape, name=None, init_value=0.0):
-    initial = tf.constant(init_value, shape=shape)
+    initial = tf.constant(init_value, shape=shape, dtype=tf.float32)
     if name is None:
         return tf.Variable(initial)
     else:
         return tf.get_variable(name, initializer=initial)
 
 
+def _weight_variable_bilinear(shape, name=None):
+
+    weights = bilinear_upsample_weights(shape)
+    initial = tf.constant(weights, shape=shape, dtype=tf.float32)
+
+    if name is None:
+        return tf.Variable(initial)
+    else:
+        return tf.get_variable(name, initializer=initial)
+
+
+def upsample_filt(size):
+    """
+    Make a 2D bilinear kernel suitable for upsampling of the given (h, w) size.
+    """
+    factor = (size + 1) // 2
+    if size % 2 == 1:
+        center = factor - 1
+    else:
+        center = factor - 0.5
+    og = np.ogrid[:size, :size]
+    return (1 - abs(og[0] - center) / factor) * \
+           (1 - abs(og[1] - center) / factor)
+
+
+def bilinear_upsample_weights(shape):
+    """
+    Create weights matrix for transposed convolution with bilinear filter
+    initialization.
+    """
+
+    if not shape[0] == shape[1]: raise ValueError('kernel is not square')
+    if not shape[2] == shape[3]: raise ValueError('input and output featuremaps must have the same size')
+
+    kernel_size = shape[0]
+    num_feature_maps = shape[2]
+
+    weights = np.zeros(shape, dtype=np.float32)
+    upsample_kernel = upsample_filt(kernel_size)
+
+    for i in range(num_feature_maps):
+        weights[:, :, i, i] = upsample_kernel
+
+    return weights
