@@ -120,9 +120,9 @@ def augmentation_function(images, labels, **kwargs):
         lbl = image_utils.resize_image(lbl[p_y:(p_y + r_y), p_x:(p_x + r_y)], (n_x, n_y), interp=cv2.INTER_NEAREST)
 
         # DEBUG VISUALISATION
-        cv2.imshow('image', image_utils.convert_to_uint8(img))
-        cv2.imshow('labels', image_utils.convert_to_uint8(lbl))
-        cv2.waitKey(0)
+        # cv2.imshow('image', image_utils.convert_to_uint8(img))
+        # cv2.imshow('labels', image_utils.convert_to_uint8(lbl))
+        # cv2.waitKey(0)
 
         new_images.append(img[..., np.newaxis])
         new_labels.append(lbl[...])
