@@ -84,7 +84,6 @@ def evaluation(logits, labels):
     mask = tf.arg_max(tf.nn.softmax(logits, dim=-1), dimension=3)
     mask_gt = tf.arg_max(labels, dimension=3)
 
-
     tf.summary.image('example_segm', get_segmentation_summary(mask))
     tf.summary.image('example_gt', get_segmentation_summary(mask_gt))
 

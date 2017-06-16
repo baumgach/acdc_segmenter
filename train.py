@@ -27,22 +27,25 @@ PROJECT_ROOT = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored'
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/ln_3pool_stackconvs_adam_reg0.00005_lr0.001_aug2')
 # LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/debug')
 
-LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/sononet16_adam_reg0.00005_lr0.01_aug_newbn')
+# LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/unet_gbn_adam_reg0.00000_lr0.01_aug')
+LOG_DIR = os.path.join(PROJECT_ROOT, 'acdc_logdir/VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
 
-BATCH_SIZE = 20
+BATCH_SIZE = 10
 LEARNING_RATE = 0.01
 DATA_FILE = 'data_288x288.hdf5'  #'data_288x288_plusregs.hdf5'
 # MODEL_HANDLE = model_zoo.lisa_net_deeper_bn
-MODEL_HANDLE = model_zoo.SonoNet32
+MODEL_HANDLE = model_zoo.VGG16_FCN_8_bn
+# MODEL_HANDLE = model_zoo.VGG16_FCN_8_bn_smaller
+# MODEL_HANDLE = model_zoo.unet_bn
 # MODEL_HANDLE = model_zoo.lisa_net_one_more_pool
 # MODEL_HANDLE = model_zoo.lisa_net_3pool_stack_convs
 OPTIMIZER_HANDLE = tf.train.AdamOptimizer
 # OPTIMIZER_HANDLE = tf.train.GradientDescentOptimizer
 # OPTIMIZER_HANDLE = tf.train.MomentumOptimizer
 SCHEDULE_LR = False
-WARMUP_TRAINING = False
+WARMUP_TRAINING = True
 AUGMENT_BATCH = True
-WEIGHT_DECAY = 0.00005
+WEIGHT_DECAY = 0.00000
 MOMENTUM = None  #0.9
 
 ### GLOBAL CONSTANTS: #############################################################
@@ -279,7 +282,7 @@ def run_training():
 
                 # logging.info('step: %d' % step)
 
-                if SCHEDULE_LR and WARMUP_TRAINING:
+                if WARMUP_TRAINING:
                     if step < 50:
                         curr_lr = LEARNING_RATE / 10.0
                     elif step == 50:
@@ -304,6 +307,9 @@ def run_training():
 
 
                 _, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+
+                # debugging
+                # logging.info('step: %d, loss value: %f' % (step, loss_value))
 
                 duration = time.time() - start_time
 
