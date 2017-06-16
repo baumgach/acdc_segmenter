@@ -385,7 +385,58 @@ def stack_all_convs(images, training):
 
     return conv14
 
-def SonoNet64(images, training):
+
+def VGG16_FCN_8(images, training):
+
+    conv1_1 = layers.conv2D_layer(images, 'conv1_1', num_filters=64)
+    conv1_2 = layers.conv2D_layer(conv1_1, 'conv1_2', num_filters=64)
+
+    pool1 = layers.max_pool_layer(conv1_2)
+
+    conv2_1 = layers.conv2D_layer(pool1, 'conv2_1', num_filters=128)
+    conv2_2 = layers.conv2D_layer(conv2_1, 'conv2_2', num_filters=128)
+
+    pool2 = layers.max_pool_layer(conv2_2)
+
+    conv3_1 = layers.conv2D_layer(pool2, 'conv3_1', num_filters=256)
+    conv3_2 = layers.conv2D_layer(conv3_1, 'conv3_2', num_filters=256)
+    conv3_3 = layers.conv2D_layer(conv3_2, 'conv3_3', num_filters=256)
+
+    pool3 = layers.max_pool_layer(conv3_3)
+
+    conv4_1 = layers.conv2D_layer(pool3, 'conv4_1', num_filters=512)
+    conv4_2 = layers.conv2D_layer(conv4_1, 'conv4_2', num_filters=512)
+    conv4_3 = layers.conv2D_layer(conv4_2, 'conv4_3', num_filters=512)
+
+    pool4 = layers.max_pool_layer(conv4_3)
+
+    conv5_1 = layers.conv2D_layer(pool4, 'conv5_1', num_filters=512)
+    conv5_2 = layers.conv2D_layer(conv5_1, 'conv5_2', num_filters=512)
+    conv5_3 = layers.conv2D_layer(conv5_2, 'conv5_3', num_filters=512)
+
+    pool5 = layers.max_pool_layer(conv5_3)
+
+    conv6 = layers.conv2D_layer(pool5, 'conv6', num_filters=4096, kernel_size=(3,3))
+    conv7= layers.conv2D_layer(conv6, 'conv7', num_filters=4096, kernel_size=(1,1))
+
+    score5 = layers.conv2D_layer(conv7, 'score5', num_filters=NUM_CLASSES, kernel_size=(1,1))
+    score4 = layers.conv2D_layer(pool4, 'score4', num_filters=NUM_CLASSES, kernel_size=(1,1))
+    score3 = layers.conv2D_layer(pool3, 'score3', num_filters=NUM_CLASSES, kernel_size=(1,1))
+
+    upscore1 = layers.deconv2D_layer(score5, name='upscore1', kernel_size=(4,4), strides=(2,2), num_filters=NUM_CLASSES, weight_init='bilinear')
+
+    sum1 = tf.add(upscore1, score4)
+
+    upscore2 = layers.deconv2D_layer(sum1, name='upscore2', kernel_size=(4,4), strides=(2,2), num_filters=NUM_CLASSES, weight_init='bilinear')
+
+    sum2 = tf.add(upscore2, score3)
+
+    upscore3 = layers.deconv2D_layer(sum2, name='upscore3', kernel_size=(16,16), strides=(8,8), num_filters=NUM_CLASSES, weight_init='bilinear')
+
+    return upscore3
+
+
+def VGG16_FCN_8_bn(images, training):
 
     conv1_1 = layers.conv2D_layer_bn(images, 'conv1_1', num_filters=64, training=training)
     conv1_2 = layers.conv2D_layer_bn(conv1_1, 'conv1_2', num_filters=64, training=training)
@@ -415,102 +466,129 @@ def SonoNet64(images, training):
 
     pool5 = layers.max_pool_layer(conv5_3)
 
-    deco5 = layers.deconv2D_layer_bn(pool5, name='deco5', kernel_size=(64,64), strides=(32,32), num_filters=32, training=training)
-    deco4 = layers.deconv2D_layer_bn(pool4, name='deco4', kernel_size=(32,32), strides=(16,16), num_filters=32, training=training)
-    deco3 = layers.deconv2D_layer_bn(pool3, name='deco3', kernel_size=(16,16), strides=(8,8), num_filters=32, training=training)
-    deco2 = layers.deconv2D_layer_bn(pool2, name='deco2', kernel_size=(8,8), strides=(4,4), num_filters=32, training=training)
-    deco1 = layers.deconv2D_layer_bn(pool1, name='deco1', kernel_size=(4,4), strides=(2,2), num_filters=32, training=training)
+    conv6 = layers.conv2D_layer_bn(pool5, 'conv6', num_filters=4096, kernel_size=(7,7), training=training)
+    conv7= layers.conv2D_layer_bn(conv6, 'conv7', num_filters=4096, kernel_size=(1,1), training=training)
 
-    stack = tf.concat([deco1, deco2, deco3, deco4, deco5], axis=3, name='stacked')
+    score5 = layers.conv2D_layer_bn(conv7, 'score5', num_filters=NUM_CLASSES, kernel_size=(1,1), training=training)
+    score4 = layers.conv2D_layer_bn(pool4, 'score4', num_filters=NUM_CLASSES, kernel_size=(1,1), training=training)
+    score3 = layers.conv2D_layer_bn(pool3, 'score3', num_filters=NUM_CLASSES, kernel_size=(1,1), training=training)
 
-    conv_A_1 = layers.conv2D_layer_bn(stack, 'conv_A_1', num_filters=256, kernel_size=(1,1), training=training)
-    conv_A_2 = layers.conv2D_layer_bn(conv_A_1, 'conv_A_2', num_filters=NUM_CLASSES, kernel_size=(1,1), activation=layers.no_activation, training=training)
+    upscore1 = layers.deconv2D_layer_bn(score5, name='upscore1', kernel_size=(4,4), strides=(2,2), num_filters=NUM_CLASSES, weight_init='bilinear', training=training)
 
-    return conv_A_2
+    sum1 = tf.add(upscore1, score4)
+
+    upscore2 = layers.deconv2D_layer_bn(sum1, name='upscore2', kernel_size=(4,4), strides=(2,2), num_filters=NUM_CLASSES, weight_init='bilinear', training=training)
+
+    sum2 = tf.add(upscore2, score3)
+
+    upscore3 = layers.deconv2D_layer_bn(sum2, name='upscore3', kernel_size=(16,16), strides=(8,8), num_filters=NUM_CLASSES, weight_init='bilinear', training=training)
+
+    return upscore3
 
 
-def SonoNet32(images, training):
+def unet_bn(images, training):
 
-    conv1_1 = layers.conv2D_layer_bn(images, 'conv1_1', num_filters=32, training=training)
-    conv1_2 = layers.conv2D_layer_bn(conv1_1, 'conv1_2', num_filters=32, training=training)
-
-    pool1 = layers.max_pool_layer(conv1_2)
-
-    conv2_1 = layers.conv2D_layer_bn(pool1, 'conv2_1', num_filters=64, training=training)
-    conv2_2 = layers.conv2D_layer_bn(conv2_1, 'conv2_2', num_filters=64, training=training)
-
-    pool2 = layers.max_pool_layer(conv2_2)
-
-    conv3_1 = layers.conv2D_layer_bn(pool2, 'conv3_1', num_filters=128, training=training)
-    conv3_2 = layers.conv2D_layer_bn(conv3_1, 'conv3_2', num_filters=128, training=training)
-    conv3_3 = layers.conv2D_layer_bn(conv3_2, 'conv3_3', num_filters=128, training=training)
-
-    pool3 = layers.max_pool_layer(conv3_3)
-
-    conv4_1 = layers.conv2D_layer_bn(pool3, 'conv4_1', num_filters=256, training=training)
-    conv4_2 = layers.conv2D_layer_bn(conv4_1, 'conv4_2', num_filters=256, training=training)
-    conv4_3 = layers.conv2D_layer_bn(conv4_2, 'conv4_3', num_filters=256, training=training)
-
-    pool4 = layers.max_pool_layer(conv4_3)
-
-    conv5_1 = layers.conv2D_layer_bn(pool4, 'conv5_1', num_filters=256, training=training)
-    conv5_2 = layers.conv2D_layer_bn(conv5_1, 'conv5_2', num_filters=256, training=training)
-    conv5_3 = layers.conv2D_layer_bn(conv5_2, 'conv5_3', num_filters=256, training=training)
-
-    pool5 = layers.max_pool_layer(conv5_3)
-
-    deco5 = layers.deconv2D_layer_bn(pool5, name='deco5', kernel_size=(64,64), strides=(32,32), num_filters=32, training=training)
-    deco4 = layers.deconv2D_layer_bn(pool4, name='deco4', kernel_size=(32,32), strides=(16,16), num_filters=32, training=training)
-    deco3 = layers.deconv2D_layer_bn(pool3, name='deco3', kernel_size=(16,16), strides=(8,8), num_filters=32, training=training)
-    deco2 = layers.deconv2D_layer_bn(pool2, name='deco2', kernel_size=(8,8), strides=(4,4), num_filters=32, training=training)
-    deco1 = layers.deconv2D_layer_bn(pool1, name='deco1', kernel_size=(4,4), strides=(2,2), num_filters=32, training=training)
-
-    stack = tf.concat([deco1, deco2, deco3, deco4, deco5], axis=3, name='stacked')
-
-    conv_A_1 = layers.conv2D_layer_bn(stack, 'conv_A_1', num_filters=256, kernel_size=(1,1), training=training)
-    conv_A_2 = layers.conv2D_layer_bn(conv_A_1, 'conv_A_2', num_filters=NUM_CLASSES, kernel_size=(1,1), activation=layers.no_activation, training=training)
-
-    return conv_A_2
-
-def SonoNet16(images, training):
-
-    conv1_1 = layers.conv2D_layer_bn(images, 'conv1_1', num_filters=16, training=training)
-    conv1_2 = layers.conv2D_layer_bn(conv1_1, 'conv1_2', num_filters=16, training=training)
+    conv1_1 = layers.conv2D_layer_bn(images, 'conv1_1', num_filters=64, training=training)
+    conv1_2 = layers.conv2D_layer_bn(conv1_1, 'conv1_2', num_filters=64, training=training)
 
     pool1 = layers.max_pool_layer(conv1_2)
 
-    conv2_1 = layers.conv2D_layer_bn(pool1, 'conv2_1', num_filters=32, training=training)
-    conv2_2 = layers.conv2D_layer_bn(conv2_1, 'conv2_2', num_filters=32, training=training)
+    conv2_1 = layers.conv2D_layer_bn(pool1, 'conv2_1', num_filters=128, training=training)
+    conv2_2 = layers.conv2D_layer_bn(conv2_1, 'conv2_2', num_filters=128, training=training)
 
     pool2 = layers.max_pool_layer(conv2_2)
 
-    conv3_1 = layers.conv2D_layer_bn(pool2, 'conv3_1', num_filters=64, training=training)
-    conv3_2 = layers.conv2D_layer_bn(conv3_1, 'conv3_2', num_filters=64, training=training)
-    conv3_3 = layers.conv2D_layer_bn(conv3_2, 'conv3_3', num_filters=64, training=training)
+    conv3_1 = layers.conv2D_layer_bn(pool2, 'conv3_1', num_filters=256, training=training)
+    conv3_2 = layers.conv2D_layer_bn(conv3_1, 'conv3_2', num_filters=256, training=training)
 
-    pool3 = layers.max_pool_layer(conv3_3)
+    pool3 = layers.max_pool_layer(conv3_2)
 
-    conv4_1 = layers.conv2D_layer_bn(pool3, 'conv4_1', num_filters=128, training=training)
-    conv4_2 = layers.conv2D_layer_bn(conv4_1, 'conv4_2', num_filters=128, training=training)
-    conv4_3 = layers.conv2D_layer_bn(conv4_2, 'conv4_3', num_filters=128, training=training)
+    conv4_1 = layers.conv2D_layer_bn(pool3, 'conv4_1', num_filters=512, training=training)
+    conv4_2 = layers.conv2D_layer_bn(conv4_1, 'conv4_2', num_filters=512, training=training)
 
-    pool4 = layers.max_pool_layer(conv4_3)
+    pool4 = layers.max_pool_layer(conv4_2)
 
-    conv5_1 = layers.conv2D_layer_bn(pool4, 'conv5_1', num_filters=128, training=training)
-    conv5_2 = layers.conv2D_layer_bn(conv5_1, 'conv5_2', num_filters=128, training=training)
-    conv5_3 = layers.conv2D_layer_bn(conv5_2, 'conv5_3', num_filters=128, training=training)
+    conv5_1 = layers.conv2D_layer_bn(pool4, 'conv5_1', num_filters=1024, training=training)
+    conv5_2 = layers.conv2D_layer_bn(conv5_1, 'conv5_2', num_filters=1024, training=training)
 
-    pool5 = layers.max_pool_layer(conv5_3)
+    upconv4 = layers.deconv2D_layer_bn(conv5_2, name='upconv4', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat4 = tf.concat([conv4_2, upconv4], axis=3, name='concat4')
 
-    deco5 = layers.deconv2D_layer_bn(pool5, name='deco5', kernel_size=(64,64), strides=(32,32), num_filters=32, training=training)
-    deco4 = layers.deconv2D_layer_bn(pool4, name='deco4', kernel_size=(32,32), strides=(16,16), num_filters=32, training=training)
-    deco3 = layers.deconv2D_layer_bn(pool3, name='deco3', kernel_size=(16,16), strides=(8,8), num_filters=32, training=training)
-    deco2 = layers.deconv2D_layer_bn(pool2, name='deco2', kernel_size=(8,8), strides=(4,4), num_filters=32, training=training)
-    deco1 = layers.deconv2D_layer_bn(pool1, name='deco1', kernel_size=(4,4), strides=(2,2), num_filters=32, training=training)
+    conv6_1 = layers.conv2D_layer_bn(concat4, 'conv6_1', num_filters=512, training=training)
+    conv6_2 = layers.conv2D_layer_bn(conv6_1, 'conv6_2', num_filters=512, training=training)
 
-    stack = tf.concat([deco1, deco2, deco3, deco4, deco5], axis=3, name='stacked')
+    upconv3 = layers.deconv2D_layer_bn(conv6_2, name='upconv3', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat3 = tf.concat([conv3_2, upconv3], axis=3, name='concat3')
 
-    conv_A_1 = layers.conv2D_layer_bn(stack, 'conv_A_1', num_filters=128, kernel_size=(1,1), training=training)
-    conv_A_2 = layers.conv2D_layer_bn(conv_A_1, 'conv_A_2', num_filters=NUM_CLASSES, kernel_size=(1,1), activation=layers.no_activation, training=training)
+    conv7_1 = layers.conv2D_layer_bn(concat3, 'conv7_1', num_filters=256, training=training)
+    conv7_2 = layers.conv2D_layer_bn(conv7_1, 'conv7_2', num_filters=256, training=training)
 
-    return conv_A_2
+    upconv2 = layers.deconv2D_layer_bn(conv7_2, name='upconv2', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat2 = tf.concat([conv2_2, upconv2], axis=3, name='concat2')
+
+    conv8_1 = layers.conv2D_layer_bn(concat2, 'conv8_1', num_filters=128, training=training)
+    conv8_2 = layers.conv2D_layer_bn(conv8_1, 'conv8_2', num_filters=128, training=training)
+
+    upconv1 = layers.deconv2D_layer_bn(conv8_2, name='upconv1', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat1 = tf.concat([conv1_2, upconv1], axis=3, name='concat1')
+
+    conv9_1 = layers.conv2D_layer_bn(concat1, 'conv9_1', num_filters=64, training=training)
+    conv9_2 = layers.conv2D_layer_bn(conv9_1, 'conv9_2', num_filters=64, training=training)
+
+    pred = layers.conv2D_layer_bn(conv9_2, 'pred', num_filters=NUM_CLASSES, kernel_size=(1,1), activation=layers.no_activation, training=training)
+
+    return pred
+
+
+def unet(images, training):
+
+    conv1_1 = layers.conv2D_layer(images, 'conv1_1', num_filters=64, training=training)
+    conv1_2 = layers.conv2D_layer(conv1_1, 'conv1_2', num_filters=64, training=training)
+
+    pool1 = layers.max_pool_layer(conv1_2)
+
+    conv2_1 = layers.conv2D_layer(pool1, 'conv2_1', num_filters=128, training=training)
+    conv2_2 = layers.conv2D_layer(conv2_1, 'conv2_2', num_filters=128, training=training)
+
+    pool2 = layers.max_pool_layer(conv2_2)
+
+    conv3_1 = layers.conv2D_layer(pool2, 'conv3_1', num_filters=256, training=training)
+    conv3_2 = layers.conv2D_layer(conv3_1, 'conv3_2', num_filters=256, training=training)
+
+    pool3 = layers.max_pool_layer(conv3_2)
+
+    conv4_1 = layers.conv2D_layer(pool3, 'conv4_1', num_filters=512, training=training)
+    conv4_2 = layers.conv2D_layer(conv4_1, 'conv4_2', num_filters=512, training=training)
+
+    pool4 = layers.max_pool_layer(conv4_2)
+
+    conv5_1 = layers.conv2D_layer(pool4, 'conv5_1', num_filters=1024, training=training)
+    conv5_2 = layers.conv2D_layer(conv5_1, 'conv5_2', num_filters=1024, training=training)
+
+    upconv4 = layers.deconv2D_layer(conv5_2, name='upconv4', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat4 = tf.concat([conv4_2, upconv4], axis=3, name='concat4')
+
+    conv6_1 = layers.conv2D_layer(concat4, 'conv6_1', num_filters=512, training=training)
+    conv6_2 = layers.conv2D_layer(conv6_1, 'conv6_2', num_filters=512, training=training)
+
+    upconv3 = layers.deconv2D_layer(conv6_2, name='upconv3', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat3 = tf.concat([conv3_2, upconv3], axis=3, name='concat3')
+
+    conv7_1 = layers.conv2D_layer(concat3, 'conv7_1', num_filters=256, training=training)
+    conv7_2 = layers.conv2D_layer(conv7_1, 'conv7_2', num_filters=256, training=training)
+
+    upconv2 = layers.deconv2D_layer(conv7_2, name='upconv2', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat2 = tf.concat([conv2_2, upconv2], axis=3, name='concat2')
+
+    conv8_1 = layers.conv2D_layer(concat2, 'conv8_1', num_filters=128, training=training)
+    conv8_2 = layers.conv2D_layer(conv8_1, 'conv8_2', num_filters=128, training=training)
+
+    upconv1 = layers.deconv2D_layer(conv8_2, name='upconv1', kernel_size=(4, 4), strides=(2, 2), num_filters=NUM_CLASSES, training=training)
+    concat1 = tf.concat([conv1_2, upconv1], axis=3, name='concat1')
+
+    conv9_1 = layers.conv2D_layer(concat1, 'conv9_1', num_filters=64, training=training)
+    conv9_2 = layers.conv2D_layer(conv9_1, 'conv9_2', num_filters=64, training=training)
+
+    pred = layers.conv2D_layer(conv9_2, 'pred', num_filters=NUM_CLASSES, kernel_size=(1,1), activation=layers.no_activation, training=training)
+
+    return pred
