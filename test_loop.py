@@ -6,6 +6,48 @@ import h5py
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax
 import model_zoo
+import tfwrapper.utils as tf_utils
+import image_utils
+import cv2
+
+def augmentation_function(images, labels):
+
+    # TODO: Create kwargs with augmentation options
+
+    if images.ndim == 3:
+        print('so this happened')
+        images = images[np.newaxis, ...]
+        labels = labels[np.newaxis, ...]
+
+    new_images = []
+    new_labels = []
+    num_images = images.shape[0]
+
+    for ii in range(num_images):
+
+        random_angle = np.random.uniform(-15, 15)
+        img = np.squeeze(images[ii,...])
+        lbl = np.squeeze(labels[ii,...])
+
+        img = image_utils.rotate_image(img, random_angle)
+        lbl = image_utils.rotate_image(lbl, random_angle, interp=cv2.INTER_NEAREST)
+
+        # cv2.imshow('image', image_utils.convert_to_uint8(img))
+        # cv2.imshow('labels', image_utils.convert_to_uint8(lbl))
+        # cv2.waitKey(0)
+
+        new_images.append(img[..., np.newaxis])
+        new_labels.append(lbl[...])
+
+    sampled_image_batch = np.asarray(new_images)
+    sampled_label_batch = np.asarray(new_labels)
+
+    if sampled_image_batch.ndim == 3:
+        print('so that happened')
+        sampled_image_batch = sampled_image_batch[np.newaxis, ...]
+        sampled_label_batch = sampled_label_batch[np.newaxis, ...]
+
+    return sampled_image_batch, sampled_label_batch
 
 def placeholder_inputs(batch_size):
 
@@ -14,14 +56,20 @@ def placeholder_inputs(batch_size):
     return images_placeholder, labels_placeholder
 
 data = h5py.File('data_288x288.hdf5', 'r')
-images_val = data['images_test'][:]
-labels_val = data['masks_test'][:]
+# images_val = data['images_test'][:]
+# labels_val = data['masks_test'][:]
+images_val = data['images_train'][:]
+labels_val = data['masks_train'][:]
+
 
 images_val = np.reshape(images_val, (images_val.shape[0], 288, 288, 1))
 
+
 images_placeholder, labels_placeholder = placeholder_inputs(1)
 
-inference_handle = model_zoo.lisa_net_deeper
+# inference_handle = model_zoo.lisa_net_deeper
+inference_handle = model_zoo.unet_bn
+
 mask, softmax = model.predict(images_placeholder, inference_handle)
 
 saver = tf.train.Saver()
@@ -33,14 +81,31 @@ with tf.Session() as sess:
 
     sess.run(init)
     # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn'))
-    saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug_refunweighted'))
+    # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug_refunweighted'))
+    saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/unet_bn_adam_reg0.00000_lr0.01_aug_2'))
 
     while True:
 
         ind = np.random.randint(images_val.shape[0])
 
-        x = images_val[np.newaxis, ind,...]
+        x = images_val[np.newaxis, ind,...] + 0.3
         y = labels_val[ind,...]
+
+        y_tensor = np.reshape(y, [1, 288, 288, 1])
+
+        # x, y_tensor = augmentation_function(x, y_tensor)
+
+        print(x.min())
+        print(x.max())
+        print(x.mean())
+
+        # x = image_utils.normalise_image(x)
+
+        print(x.min())
+        print(x.max())
+        print(x.mean())
+
+        print('---')
 
         feed_dict = {
             images_placeholder: x,

@@ -4,6 +4,7 @@ import sys
 import time
 import socket
 
+import tensorflow as tf
 import cv2
 import h5py
 import numpy as np
@@ -16,7 +17,12 @@ from background_generator import BackgroundGenerator
 from config.train import *
 from config.system import *
 
+from experiments import unet_bn as exp_config
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+
+
+LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()
@@ -144,7 +150,7 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
 
 def run_training():
 
-    data = h5py.File(os.path.join(PROJECT_ROOT, DATA_FILE), 'r')
+    data = h5py.File(os.path.join(PROJECT_ROOT, exp_config.data_file), 'r')
 
     # the following are HDF5 datasets, not numpy arrays
     images_train = data['images_train']
@@ -167,7 +173,7 @@ def run_training():
 
         # Generate placeholders for the images and labels.
         # images_placeholder, labels_placeholder = placeholder_inputs(None)  # or replace by none/batch_size
-        images_placeholder, labels_placeholder = placeholder_inputs(BATCH_SIZE)  # or replace by none/batch_size
+        images_placeholder, labels_placeholder = placeholder_inputs(exp_config.batch_size)  # or replace by none/batch_size
 
         learning_rate_placeholder = tf.placeholder(tf.float32, shape=[])
         training_time_placeholder = tf.placeholder(tf.bool, shape=[])
@@ -175,19 +181,19 @@ def run_training():
         tf.summary.scalar('learning_rate', learning_rate_placeholder)
 
         # Build a Graph that computes predictions from the inference model.
-        logits = model.inference(images_placeholder, MODEL_HANDLE, training=training_time_placeholder)
+        logits = model.inference(images_placeholder, exp_config.model_handle, training=training_time_placeholder)
 
         # Add to the Graph the Ops for loss calculation.
-        [loss, _, weights_norm] = model.loss(logits, labels_placeholder, weight_decay=WEIGHT_DECAY)  # second output is unregularised loss
+        [loss, _, weights_norm] = model.loss(logits, labels_placeholder, weight_decay=exp_config.weight_decay)  # second output is unregularised loss
 
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('weights_norm_term', weights_norm)
 
         # Add to the Graph the Ops that calculate and apply gradients.
-        if MOMENTUM is not None:
-            train_op = model.training(loss, OPTIMIZER_HANDLE, learning_rate_placeholder, momentum=MOMENTUM)
+        if exp_config.momentum is not None:
+            train_op = model.training(loss, exp_config.optimizer_handle, learning_rate_placeholder, momentum=exp_config.momentum)
         else:
-            train_op = model.training(loss, OPTIMIZER_HANDLE, learning_rate_placeholder)
+            train_op = model.training(loss, exp_config.optimizer_handle, learning_rate_placeholder)
 
         # Add the Op to compare the logits to the labels during evaluation.
         eval_loss = model.evaluation(logits, labels_placeholder)
@@ -229,7 +235,7 @@ def run_training():
         sess.run(init)
 
         step = 0
-        curr_lr = LEARNING_RATE
+        curr_lr = exp_config.learning_rate
 
         no_improvement_counter = 0
         best_val = np.inf
@@ -241,15 +247,15 @@ def run_training():
 
             logging.info('EPOCH %d' % epoch)
 
-            for batch in BackgroundGenerator(iterate_minibatches(images_train, labels_train, batch_size=BATCH_SIZE)):
+            for batch in BackgroundGenerator(iterate_minibatches(images_train, labels_train, batch_size=exp_config.batch_size)):
 
                 # logging.info('step: %d' % step)
 
-                if SCHEDULE_LR and WARMUP_TRAINING:
+                if exp_config.warmup_training:
                     if step < 50:
-                        curr_lr = LEARNING_RATE / 10.0
+                        curr_lr = exp_config.learning_rate / 10.0
                     elif step == 50:
-                        curr_lr = LEARNING_RATE
+                        curr_lr = exp_config.learning_rate
 
                 start_time = time.time()
 
@@ -257,7 +263,7 @@ def run_training():
                 x, y = batch
 
                 # TEMPORARY HACK (to avoid incomplete batches
-                if y.shape[0] < BATCH_SIZE:
+                if y.shape[0] < exp_config.batch_size:
                     step += 1
                     continue
 
@@ -270,6 +276,9 @@ def run_training():
 
 
                 _, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+
+                # debugging
+                # logging.info('step: %d, loss value: %f' % (step, loss_value))
 
                 duration = time.time() - start_time
 
@@ -297,7 +306,7 @@ def run_training():
                                                        training_time_placeholder,
                                                        images_train,
                                                        labels_train,
-                                                       BATCH_SIZE)
+                                                       exp_config.batch_size)
 
                     train_summary_msg = sess.run(train_summary, feed_dict={train_error_: train_loss,
                                                                            train_dice_: train_dice}
@@ -313,7 +322,7 @@ def run_training():
                                                    training_time_placeholder,
                                                    images_val,
                                                    labels_val,
-                                                   BATCH_SIZE)
+                                                   exp_config.batch_size)
 
                     val_summary_msg = sess.run(val_summary, feed_dict={val_error_: val_loss, val_dice_: val_dice}
                     )
@@ -326,7 +335,7 @@ def run_training():
 
                     logging.info('loss gradient is currently %f' % loss_gradient)
 
-                    if SCHEDULE_LR and loss_gradient < SCHEDULE_GRADIENT_THRESHOLD:
+                    if exp_config.schedule_lr and loss_gradient < SCHEDULE_GRADIENT_THRESHOLD:
                         logging.warning('Reducing learning rate!')
                         curr_lr /= 10.0
                         logging.info('Learning rate changed to: %f' % curr_lr)

@@ -4,15 +4,18 @@ import image_utils
 import os
 import glob
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 import numpy as np
 import cv2
+import logging
 
 import model as model
 import tensorflow as tf
 
 import model_zoo
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
@@ -210,6 +213,7 @@ def post_process_prediction(img):
 
 if __name__ == '__main__':
 
+    base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
     # model_path = './good_models/lisa_net_deeper_adam_reg0.00005_lr0.001_long'  # 0.777998
     # model_path = './good_models/lisa_net_deeper_adam_autosched2' # 0.800817
     # model_path = './good_models/lisa_net_deeper_adam_reg0.00005_lr0.001_augm3' # 0.765803
@@ -223,11 +227,15 @@ if __name__ == '__main__':
     # model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.0001_aug_refunweighted'  # 0.808602 --> this refinement also improved it a bit
     # model_path = './acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00005_lr0.1_aug_newbn' # 0.812817
     # model_path = './acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn' #0.812500
-    model_path = './acdc_logdir/lisa_net_deeper_adam_nosched_reg0.00000_lr0.01_aug_newbn' # 0.825071, 0.833786
+    # model_path = './acdc_logdir/lisa_net_deeper_adam_nosched_reg0.00000_lr0.01_aug_newbn' # 0.825071, 0.833786
+    model_path = os.path.join(base_path, 'unet_gbn_adam_reg0.00000_lr0.01_aug')
+    # model_path = os.path.join(base_path, 'VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
 
     # inference_handle = model_zoo.lisa_net_deeper
-    inference_handle = model_zoo.lisa_net_deeper_bn
+    # inference_handle = model_zoo.lisa_net_deeper_bn
     # inference_handle = model_zoo.dilation_after_max_pool
+    inference_handle = model_zoo.unet_bn
+    # inference_handle = model_zoo.VGG16_FCN_8_bn
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
@@ -247,5 +255,10 @@ if __name__ == '__main__':
     print('Dice 2: %f' % dice2)
     print('Dice 3: %f' % dice3)
     print('Mean dice: %f' % np.mean([dice1, dice2, dice3]))
+
+    logging.info('Dice 1: %f' % dice1)
+    logging.info('Dice 2: %f' % dice2)
+    logging.info('Dice 3: %f' % dice3)
+    logging.info('Mean dice: %f' % np.mean([dice1, dice2, dice3]))
 
 
