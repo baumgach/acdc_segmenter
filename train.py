@@ -3,12 +3,14 @@ import os.path
 import sys
 import time
 import socket
+import shutil
 
 import tensorflow as tf
 import cv2
 import h5py
 import numpy as np
 
+import utils
 import image_utils
 import model as model
 import tfwrapper.utils as tf_utils
@@ -17,12 +19,13 @@ from background_generator import BackgroundGenerator
 from config.train import *
 from config.system import *
 
-from experiments import unet_bn as exp_config
+from experiments import lisa_net_deep_bn as exp_config
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
-
 LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
+utils.makefolder(LOG_DIR)
+shutil.copy(exp_config.__file__, LOG_DIR)
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()

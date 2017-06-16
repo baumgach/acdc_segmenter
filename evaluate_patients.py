@@ -228,14 +228,14 @@ if __name__ == '__main__':
     # model_path = './acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00005_lr0.1_aug_newbn' # 0.812817
     # model_path = './acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn' #0.812500
     # model_path = './acdc_logdir/lisa_net_deeper_adam_nosched_reg0.00000_lr0.01_aug_newbn' # 0.825071, 0.833786
-    model_path = os.path.join(base_path, 'unet_gbn_adam_reg0.00000_lr0.01_aug')
-    # model_path = os.path.join(base_path, 'VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
+    # model_path = os.path.join(base_path, 'unet_gbn_adam_reg0.00000_lr0.01_aug')
+    model_path = os.path.join(base_path, 'VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
 
     # inference_handle = model_zoo.lisa_net_deeper
     # inference_handle = model_zoo.lisa_net_deeper_bn
     # inference_handle = model_zoo.dilation_after_max_pool
-    inference_handle = model_zoo.unet_bn
-    # inference_handle = model_zoo.VGG16_FCN_8_bn
+    # inference_handle = model_zoo.unet_bn
+    inference_handle = model_zoo.VGG16_FCN_8_bn
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
