@@ -19,7 +19,9 @@ from background_generator import BackgroundGenerator
 from config.train import *
 from config.system import *
 
-from experiments import lisa_net_deep_bn as exp_config
+### EXPERIMENT CONFIG FILE #############################################################
+from experiments import lisa_net_deep_bn_augrs as exp_config
+########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
@@ -81,9 +83,16 @@ def do_eval(sess,
     return avg_loss, avg_dice
 
 
-def augmentation_function(images, labels):
+def augmentation_function(images, labels, **kwargs):
 
-    # TODO: Create kwargs with augmentation options
+    do_rotations = kwargs.get('do_rotations', False)
+    do_scaleaug = kwargs.get('do_scaleaug', False)
+
+    if do_rotations:
+        angles = kwargs.get('angles', (-15,15))
+
+    if do_scaleaug:
+        offset = kwargs.get('offset', 30)
 
     new_images = []
     new_labels = []
@@ -91,16 +100,29 @@ def augmentation_function(images, labels):
 
     for ii in range(num_images):
 
-        random_angle = np.random.uniform(-15, 15)
+        random_angle = np.random.uniform(angles[0], angles[1])
         img = np.squeeze(images[ii,...])
         lbl = np.squeeze(labels[ii,...])
 
-        img = image_utils.rotate_image(img, random_angle)
-        lbl = image_utils.rotate_image(lbl, random_angle, interp=cv2.INTER_NEAREST)
+        # ROTATE
+        if do_rotations:
+            img = image_utils.rotate_image(img, random_angle)
+            lbl = image_utils.rotate_image(lbl, random_angle, interp=cv2.INTER_NEAREST)
 
-        # cv2.imshow('image', image_utils.convert_to_uint8(img))
-        # cv2.imshow('labels', image_utils.convert_to_uint8(lbl))
-        # cv2.waitKey(0)
+        # RANDOM CROP SCALE
+        if do_scaleaug:
+            n_x, n_y = img.shape
+            r_y = np.random.random_integers(n_y-offset, n_y)
+            p_x = np.random.random_integers(0, n_x-r_y)
+            p_y = np.random.random_integers(0, n_y-r_y)
+
+        img = image_utils.resize_image(img[p_y:(p_y+r_y), p_x:(p_x+r_y)],(n_x, n_y))
+        lbl = image_utils.resize_image(lbl[p_y:(p_y + r_y), p_x:(p_x + r_y)], (n_x, n_y), interp=cv2.INTER_NEAREST)
+
+        # DEBUG VISUALISATION
+        cv2.imshow('image', image_utils.convert_to_uint8(img))
+        cv2.imshow('labels', image_utils.convert_to_uint8(lbl))
+        cv2.waitKey(0)
 
         new_images.append(img[..., np.newaxis])
         new_labels.append(lbl[...])
@@ -140,7 +162,9 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
         X = np.reshape(X, (X.shape[0], IMAGE_SIZE[0], IMAGE_SIZE[1], 1))
 
         if augment_batch:
-            X, y = augmentation_function(X, y)
+            X, y = augmentation_function(X, y,
+                                         do_rotations=exp_config.do_rotations,
+                                         do_scaleaug=exp_config.do_scaleaug)
 
         y = tf_utils.labels_to_one_hot(y)
 
@@ -250,7 +274,10 @@ def run_training():
 
             logging.info('EPOCH %d' % epoch)
 
-            for batch in BackgroundGenerator(iterate_minibatches(images_train, labels_train, batch_size=exp_config.batch_size)):
+            for batch in BackgroundGenerator(iterate_minibatches(images_train,
+                                                                 labels_train,
+                                                                 batch_size=exp_config.batch_size,
+                                                                 augment_batch=exp_config.augment_batch)):
 
                 # logging.info('step: %d' % step)
 

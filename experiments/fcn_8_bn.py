@@ -11,6 +11,10 @@ optimizer_handle = tf.train.AdamOptimizer
 
 schedule_lr = False
 warmup_training = True
-augment_batch = True
 weight_decay = 0.00000
 momentum = None
+
+# Augmentation settings
+augment_batch = False
+do_rotations = True
+do_scaleaug = False
