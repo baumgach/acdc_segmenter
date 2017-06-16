@@ -16,11 +16,11 @@
 #$ -l h_rt=06:00:00
 
 ## the maximum memory usage of this job, (below 4G does not make much sense)
-#$ -l h_vmem=40G
+#$ -l h_vmem=30G
 
 # Host and gpu settings
 #$ -l gpu
-##$ -l hostname=bmicgpu01   # Comment in or out to force a specific machine
+#$ -l hostname=bmicgpu01   # Comment in or out to force a specific machine
 
 ## stderr and stdout are merged together to stdout
 #$ -j y
