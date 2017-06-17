@@ -401,13 +401,13 @@ def run_training():
                         best_dice = val_dice
                         best_file = os.path.join(LOG_DIR, 'model_best_dice.ckpt')
                         saver_best_dice.save(sess, best_file, global_step=step)
-                        logging.info('Found new best dice on validation set! - %f -  Saving model_best.ckpt' % val_dice)
+                        logging.info('Found new best dice on validation set! - %f -  Saving model_best_dice.ckpt' % val_dice)
 
                     if val_loss < best_val:
                         best_val = val_loss
                         best_file = os.path.join(LOG_DIR, 'model_best_xent.ckpt')
                         saver_best_xent.save(sess, best_file, global_step=step)
-                        logging.info('Found new best crossentropy on validation set! - %f -  Saving model_best.ckpt' % val_loss)
+                        logging.info('Found new best crossentropy on validation set! - %f -  Saving model_best_xent.ckpt' % val_loss)
 
                     if train_loss <= last_train: #best_train:
                         logging.info('Decrease in training error!')

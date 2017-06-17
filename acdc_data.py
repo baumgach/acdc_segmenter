@@ -89,6 +89,8 @@ class DataMakerACDC:
                     img = image_utils.normalise_image(img)
 
                     pixel_size = (img_dat[2].structarr['pixdim'][1], img_dat[2].structarr['pixdim'][2])
+                    print('pixel size:')
+                    print(pixel_size)
 
                     for zz in range(img.shape[2]):
 
@@ -167,8 +169,9 @@ if __name__ == '__main__':
     n_x = 288
     n_y = 288
 
-    base_path = '/scratch_net/bmicdl03/data/ACDC_challenge/'
-    data_maker = DataMakerACDC('data_288x288.hdf5', base_path, n_x, n_y)
+    base_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
+    # data_maker = DataMakerACDC('data_288x288.hdf5', base_path, n_x, n_y)
+    data_maker = DataMakerACDC('debug_288x288.hdf5', base_path, n_x, n_y)
 
     data_maker.run()
 
