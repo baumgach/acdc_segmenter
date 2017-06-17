@@ -4,9 +4,9 @@ import tensorflow as tf
 experiment_name = 'debug'
 
 batch_size = 10
-learning_rate = 0.01
+learning_rate = 0.1
 data_file = 'data_288x288.hdf5'
-model_handle = model_zoo.lisa_net
+model_handle = model_zoo.lisa_net_deeper_bn
 optimizer_handle = tf.train.AdamOptimizer
 
 schedule_lr = False
