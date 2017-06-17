@@ -21,7 +21,7 @@ from config.system import *
 
 ### EXPERIMENT CONFIG FILE #############################################################
 #from experiments import lisa_net_deep_bn_augrs as exp_config
-from experiments import debug as exp_config
+from experiments import unet_bn as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -210,7 +210,10 @@ def run_training():
         logits = model.inference(images_placeholder, exp_config.model_handle, training=training_time_placeholder)
 
         # Add to the Graph the Ops for loss calculation.
-        [loss, _, weights_norm] = model.loss(logits, labels_placeholder, weight_decay=exp_config.weight_decay)  # second output is unregularised loss
+        [loss, _, weights_norm] = model.loss(logits,
+                                             labels_placeholder,
+                                             weight_decay=exp_config.weight_decay,
+                                             loss_type=exp_config.loss_type)  # second output is unregularised loss
 
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('weights_norm_term', weights_norm)
@@ -222,7 +225,9 @@ def run_training():
             train_op = model.training(loss, exp_config.optimizer_handle, learning_rate_placeholder)
 
         # Add the Op to compare the logits to the labels during evaluation.
-        eval_loss = model.evaluation(logits, labels_placeholder)
+        eval_loss = model.evaluation(logits,
+                                     labels_placeholder,
+                                     loss_type=exp_config.loss_type)
 
         # Build the summary Tensor based on the TF collection of Summaries.
         summary = tf.summary.merge_all()
@@ -235,8 +240,15 @@ def run_training():
         saver_best_dice = tf.train.Saver()
         saver_best_xent = tf.train.Saver()
 
+        # GPU settings
+        gpu_memory_fraction = 1.0  # Fraction of GPU memory to use
+        allow_growth = False
+        config = tf.ConfigProto(gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction,
+                                                          allow_growth=allow_growth))
+
+
         # Create a session for running Ops on the Graph.
-        sess = tf.Session()
+        sess = tf.Session(config=config)
 
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(LOG_DIR, sess.graph)

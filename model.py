@@ -79,7 +79,7 @@ def training(loss, optimizer_handle, learning_rate, **kwargs):
     return train_op
 
 
-def evaluation(logits, labels):
+def evaluation(logits, labels, loss_type='weighted_crossentropy'):
 
     mask = tf.arg_max(tf.nn.softmax(logits, dim=-1), dimension=3)
     mask_gt = tf.arg_max(labels, dimension=3)
@@ -87,7 +87,7 @@ def evaluation(logits, labels):
     tf.summary.image('example_segm', get_segmentation_summary(mask))
     tf.summary.image('example_gt', get_segmentation_summary(mask_gt))
 
-    total_loss, nowd_loss, weights_norm = loss(logits, labels)
+    total_loss, nowd_loss, weights_norm = loss(logits, labels, loss_type=loss_type)
 
     cdice_structures = losses.per_structure_dice(logits, labels)
     cdice_foreground = tf.slice(cdice_structures, (0,1), (-1,-1))
