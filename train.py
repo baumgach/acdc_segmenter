@@ -20,8 +20,8 @@ from config.train import *
 from config.system import *
 
 ### EXPERIMENT CONFIG FILE #############################################################
-#from experiments import lisa_net_deep_bn_augrs as exp_config
-from experiments import unet_bn as exp_config
+#from experiments import debug as exp_config
+from experiments import unet_dilated_bn as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -184,6 +184,15 @@ def run_training():
 
     images_val = data['images_test']
     labels_val = data['masks_test']
+
+    if exp_config.use_data_fraction:
+        num_images = images_train.shape[0]
+        new_last_index = int(float(num_images)*exp_config.use_data_fraction)
+
+        logging.warning('USING ONLY FRACTION OF DATA!')
+        logging.warning(' - Number of imgs orig: %d, Number of imgs new: %d' % (num_images, new_last_index))
+        images_train = images_train[0:new_last_index,...]
+        labels_train = labels_train[0:new_last_index,...]
 
     logging.info('Data summary:')
     logging.info(' - Images:')

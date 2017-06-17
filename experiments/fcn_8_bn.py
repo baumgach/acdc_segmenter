@@ -19,3 +19,6 @@ loss_type = 'weighted_crossentropy'  # crossentropy/weighted_crossentropy/dice
 augment_batch = False
 do_rotations = True
 do_scaleaug = False
+
+# Rarely used settings
+use_data_fraction = False  # Should normally be False

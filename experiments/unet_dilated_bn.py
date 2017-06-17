@@ -1,12 +1,12 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_0.75data'
+experiment_name = 'unet_dilated_bn'
 
 batch_size = 10
 learning_rate = 0.01
 data_file = 'data_288x288.hdf5'
-model_handle = model_zoo.unet_bn
+model_handle = model_zoo.unet_dilated_bn
 optimizer_handle = tf.train.AdamOptimizer
 
 schedule_lr = False
@@ -21,4 +21,4 @@ do_rotations = True
 do_scaleaug = False
 
 # Rarely used settings
-use_data_fraction = 0.75  # Should normally be False
+use_data_fraction = False  # Should normally be False
