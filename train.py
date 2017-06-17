@@ -20,14 +20,14 @@ from config.train import *
 from config.system import *
 
 ### EXPERIMENT CONFIG FILE #############################################################
-from experiments import lisa_net_deep_bn_augrs as exp_config
+#from experiments import lisa_net_deep_bn_augrs as exp_config
+from experiments import debug as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
-utils.makefolder(LOG_DIR)
-shutil.copy(exp_config.__file__, LOG_DIR)
+# utils.makefolder(LOG_DIR)
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()
@@ -233,6 +233,8 @@ def run_training():
 
         # Create a saver for writing training checkpoints.
         saver = tf.train.Saver()
+        saver_best_dice = tf.train.Saver()
+        saver_best_xent = tf.train.Saver()
 
         # Create a session for running Ops on the Graph.
         sess = tf.Session()
@@ -377,10 +379,15 @@ def run_training():
 
                     if val_dice > best_dice:
                         best_dice = val_dice
-                        best_file = os.path.join(LOG_DIR, 'model_best.ckpt')
-                        saver.save(sess, best_file)
+                        best_file = os.path.join(LOG_DIR, 'model_best_dice.ckpt')
+                        saver_best_dice.save(sess, best_file, global_step=step)
                         logging.info('Found new best dice on validation set! - %f -  Saving model_best.ckpt' % val_dice)
 
+                    if val_loss < best_val:
+                        best_val = val_loss
+                        best_file = os.path.join(LOG_DIR, 'model_best_xent.ckpt')
+                        saver_best_xent.save(sess, best_file, global_step=step)
+                        logging.info('Found new best crossentropy on validation set! - %f -  Saving model_best.ckpt' % val_loss)
 
                     if train_loss <= last_train: #best_train:
                         logging.info('Decrease in training error!')
@@ -396,6 +403,13 @@ def main(_):
     if tf.gfile.Exists(LOG_DIR):
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
+
+    # Copy experiment file to log dir
+    # exp_file_name =.split('/')[-1]
+    # exp_path_net = os.path.join(PROJECT_ROOT, 'experiments',
+    #                             exp_file_name)  # This is necessary so it works from remote host
+    shutil.copy( exp_config.__file__, LOG_DIR)
+
     run_training()
 
 
