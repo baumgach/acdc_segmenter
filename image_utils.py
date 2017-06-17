@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import tfwrapper.utils as tf_utils
 
 def grow_rectangle(bdr_x, bdr_y, bdr_w, bdr_h, grow_size):
     return bdr_x-grow_size, bdr_y-grow_size, bdr_w+grow_size, bdr_h+grow_size
@@ -124,3 +125,29 @@ def rescale_image(img, scale, interp=cv2.INTER_LINEAR):
     new_size = (int(float(curr_size[0])*scale[0]+0.5), int(float(curr_size[1])*scale[1]+0.5))
     img_resized = cv2.resize(img, (new_size[1], new_size[0]), interpolation=interp)  # swap sizes to account for weird OCV API
     return img_resized
+
+def rescale_labels_lisa_style(label_map, scale, num_labels):
+
+    label_map_one_hot = tf_utils.to_onehot_image(label_map, num_labels)
+    out_labels = []
+    for ll in range(num_labels):
+        lbl = np.squeeze(label_map_one_hot[:,:,ll])
+        lbl_sc = rescale_image(lbl.astype(np.float), scale)
+        out_labels.append(lbl_sc)
+    out_array_one_hot = np.asarray(out_labels)
+    out_array = np.argmax(out_array_one_hot, axis=0).astype(np.uint8)
+
+    return out_array
+
+def resize_labels_lisa_style(label_map, size, num_labels):
+
+    label_map_one_hot = tf_utils.to_onehot_image(label_map, num_labels)
+    out_labels = []
+    for ll in range(num_labels):
+        lbl = np.squeeze(label_map_one_hot[:,:,ll])
+        lbl_sc = resize_image(lbl.astype(np.float), size)
+        out_labels.append(lbl_sc)
+    out_array_one_hot = np.asarray(out_labels)
+    out_array = np.argmax(out_array_one_hot, axis=0).astype(np.uint8)
+
+    return out_array
