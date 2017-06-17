@@ -27,9 +27,9 @@ for key in data1.keys():
         print(datum1.shape)
         print(datum2.shape)
 
-        if datum1.shape[0] == 0:
+        if datum1.shape[0] > 0 and datum2.shape[0] == 0:
             h5py_file_out.create_dataset(key, data=datum1)
-        elif datum2.shape[0] == 0:
+        elif datum1.shape[0] == 0 and datum2.shape[0] > 0:
             h5py_file_out.create_dataset(key, data=datum2)
         else:
             h5py_file_out.create_dataset(key, data=np.concatenate([datum1, datum2], axis=0))
