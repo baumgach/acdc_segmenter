@@ -5,7 +5,7 @@ experiment_name = 'debug'
 
 batch_size = 10
 learning_rate = 0.1
-data_file = 'data_288x288.hdf5'
+data_file = 'wenjia_acdc_merged.hdf5'
 model_handle = model_zoo.lisa_net_deeper_bn
 optimizer_handle = tf.train.AdamOptimizer
 
@@ -21,4 +21,4 @@ do_rotations = True
 do_scaleaug = True
 
 # Rarely used settings
-use_data_fraction = 0.75  # Should normally be False
+use_data_fraction = False  # Should normally be False
