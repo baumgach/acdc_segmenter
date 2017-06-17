@@ -27,7 +27,6 @@ from experiments import debug as exp_config
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
-# utils.makefolder(LOG_DIR)
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()
@@ -404,10 +403,7 @@ def main(_):
         tf.gfile.DeleteRecursively(LOG_DIR)
     tf.gfile.MakeDirs(LOG_DIR)
 
-    # Copy experiment file to log dir
-    # exp_file_name =.split('/')[-1]
-    # exp_path_net = os.path.join(PROJECT_ROOT, 'experiments',
-    #                             exp_file_name)  # This is necessary so it works from remote host
+    # Copy experiment config file
     shutil.copy( exp_config.__file__, LOG_DIR)
 
     run_training()
