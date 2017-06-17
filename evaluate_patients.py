@@ -65,7 +65,9 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                     for file in glob.glob(os.path.join(folder_path, 'patient???_frame??.nii.gz')):
 
+                        print(' ----- Doing image: -------------------------')
                         print(file)
+                        print(' --------------------------------------------')
 
                         file_img = file
                         file_base = file.split('.nii.gz')[0]
@@ -76,7 +78,7 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                         img_dat = utils.load_nii(file_img)
                         mask_dat = utils.load_nii(file_mask)
 
-                        img = img_dat[0]
+                        img = img_dat[0].copy()
                         mask = mask_dat[0]
 
                         img = image_utils.normalise_image(img)
@@ -123,6 +125,12 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                             # ASSEMBLE BACK THE SLICES
                             slice_predictions = np.zeros((x,y))
 
+                            # Not really sure why this is necessary...
+                            x_s -= 1
+                            y_s -= 1
+                            x_c -= 1
+                            y_c -= 1
+
                             # insert cropped region into original image again
                             if x > nx and y > ny:
                                 slice_predictions[x_s:x_s+nx, y_s:y_s+ny] = prediction_cropped
@@ -134,8 +142,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                                 else:
                                     slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y, :]
 
-                            # prediction = utils.rescale_image(slice_predictions, (1.0 / pixel_size[0], 1.0 / pixel_size[1]))
                             prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
+                            # prediction = image_utils.resize_labels_lisa_style(slice_predictions, (mask.shape[0], mask.shape[1]), num_labels=4)
 
                             predictions.append(prediction)
 
@@ -161,6 +169,24 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                         gt_file_name = os.path.join(output_folder, 'ground_truth', 'patient' + patient_id + frame_suffix + '.nii.gz')
                         print('saving to: %s' % gt_file_name)
                         utils.save_nii(gt_file_name, mask, out_affine, out_header)
+
+                        # Compute difference mask between GT and pred
+                        difference_mask = np.where(np.abs(prediction_arr-mask) > 0, [1], [0])
+                        difference_mask = np.asarray(difference_mask, dtype=np.uint8)
+                        diff_file_name = os.path.join(output_folder, 'difference',
+                                                'patient' + patient_id + frame_suffix + '.nii.gz')
+                        print('saving to: %s' % diff_file_name)
+                        utils.save_nii(diff_file_name, difference_mask, out_affine, out_header)
+
+                        # Save image data for convencience
+                        image_file_name = os.path.join(output_folder, 'image',
+                                                'patient' + patient_id + frame_suffix + '.nii.gz')
+                        print('saving to: %s' % image_file_name)
+                        utils.save_nii(image_file_name, img_dat[0], out_affine, out_header)
+
+                        # Calculate wrong voxels
+                        wrong_pixels = np.sum(difference_mask)
+                        print('Wrong pixels: %d' % wrong_pixels)
 
 
 # def get_prediction_for_image(img, sess, images_placeholder, mask, softmax, model_path, inference_handle):
@@ -243,9 +269,13 @@ if __name__ == '__main__':
 
     path_pred = os.path.join(output_path, 'prediction')
     path_gt = os.path.join(output_path, 'ground_truth')
+    path_diff = os.path.join(output_path, 'difference')
+    path_image = os.path.join(output_path, 'image')
 
     utils.makefolder(path_gt)
     utils.makefolder(path_pred)
+    utils.makefolder(path_diff)
+    utils.makefolder(path_image)
 
     score_data(input_path, output_path, model_path, inference_handle)
 
