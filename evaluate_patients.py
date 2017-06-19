@@ -40,7 +40,12 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
     with tf.Session() as sess:
 
         sess.run(init)
-        saver.restore(sess, tf.train.latest_checkpoint(model_path))
+        #saver.restore(sess, tf.train.latest_checkpoint(model_path))
+        #chkpt = tf.train.get_checkpoint_state(model_path, latest_filename='model_best_dice.ckpt-5799')
+        #print('Checkpoint into:')
+        #print(chkpt)
+        saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
+        #saver.restore(sess, chkpt)
 
 
         for folder in os.listdir(input_folder):
@@ -143,7 +148,7 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                                     slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y, :]
 
                             prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
-                            # prediction = image_utils.resize_labels_lisa_style(slice_predictions, (mask.shape[0], mask.shape[1]), num_labels=4)
+                            #prediction = image_utils.resize_labels_lisa_style(slice_predictions, (mask.shape[0], mask.shape[1]), num_labels=4)
 
                             predictions.append(prediction)
 
@@ -256,7 +261,8 @@ if __name__ == '__main__':
     # model_path = './acdc_logdir/lisa_net_deeper_adam_nosched_reg0.00000_lr0.01_aug_newbn' # 0.825071, 0.833786
     # model_path = os.path.join(base_path, 'unet_gbn_adam_reg0.00000_lr0.01_aug')
     #model_path = os.path.join(base_path, 'VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
-    model_path = os.path.join(base_path, 'unet_bn_long')
+    #model_path = os.path.join(base_path, 'unet_bn_long')
+    model_path = os.path.join(base_path, 'unet_bn_lisadata')
 
     # inference_handle = model_zoo.lisa_net_deeper
     # inference_handle = model_zoo.lisa_net_deeper_bn
@@ -264,7 +270,7 @@ if __name__ == '__main__':
     inference_handle = model_zoo.unet_bn
     # inference_handle = model_zoo.VGG16_FCN_8_bn
 
-    input_path = '/scratch_net/bmicdl03/data/ACDC_challenge/'
+    input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
 
     path_pred = os.path.join(output_path, 'prediction')

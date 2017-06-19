@@ -86,12 +86,8 @@ def augmentation_function(images, labels, **kwargs):
 
     do_rotations = kwargs.get('do_rotations', False)
     do_scaleaug = kwargs.get('do_scaleaug', False)
+    do_fliplr = kwargs.get('do_fliplr', False)
 
-    if do_rotations:
-        angles = kwargs.get('angles', (-15,15))
-
-    if do_scaleaug:
-        offset = kwargs.get('offset', 30)
 
     new_images = []
     new_labels = []
@@ -99,24 +95,33 @@ def augmentation_function(images, labels, **kwargs):
 
     for ii in range(num_images):
 
-        random_angle = np.random.uniform(angles[0], angles[1])
         img = np.squeeze(images[ii,...])
         lbl = np.squeeze(labels[ii,...])
 
         # ROTATE
         if do_rotations:
+            angles = kwargs.get('angles', (-15,15))
+            random_angle = np.random.uniform(angles[0], angles[1])
             img = image_utils.rotate_image(img, random_angle)
             lbl = image_utils.rotate_image(lbl, random_angle, interp=cv2.INTER_NEAREST)
 
         # RANDOM CROP SCALE
         if do_scaleaug:
+            offset = kwargs.get('offset', 30)
             n_x, n_y = img.shape
             r_y = np.random.random_integers(n_y-offset, n_y)
             p_x = np.random.random_integers(0, n_x-r_y)
             p_y = np.random.random_integers(0, n_y-r_y)
 
-        img = image_utils.resize_image(img[p_y:(p_y+r_y), p_x:(p_x+r_y)],(n_x, n_y))
-        lbl = image_utils.resize_image(lbl[p_y:(p_y + r_y), p_x:(p_x + r_y)], (n_x, n_y), interp=cv2.INTER_NEAREST)
+            img = image_utils.resize_image(img[p_y:(p_y+r_y), p_x:(p_x+r_y)],(n_x, n_y))
+            lbl = image_utils.resize_image(lbl[p_y:(p_y + r_y), p_x:(p_x + r_y)], (n_x, n_y), interp=cv2.INTER_NEAREST)
+
+        # RANDOM FLIP
+        if do_fliplr:
+            coin_flip = np.random.randint(2)
+            if coin_flip == 0:
+                img = np.fliplr(img)
+                lbl = np.fliplr(lbl)
 
         # DEBUG VISUALISATION
         # cv2.imshow('image', image_utils.convert_to_uint8(img))
@@ -163,7 +168,8 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
         if augment_batch:
             X, y = augmentation_function(X, y,
                                          do_rotations=exp_config.do_rotations,
-                                         do_scaleaug=exp_config.do_scaleaug)
+                                         do_scaleaug=exp_config.do_scaleaug,
+                                         do_fliplr=exp_config.do_fliplr)
 
         y = tf_utils.labels_to_one_hot(y)
 
