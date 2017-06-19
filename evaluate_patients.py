@@ -14,6 +14,7 @@ import model as model
 import tensorflow as tf
 
 import model_zoo
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
@@ -51,6 +52,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
         checkpoint_path = utils.get_best_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
         saver.restore(sess, checkpoint_path)
 
+        total_time = 0
+        total_volumes = 0
 
         for folder in os.listdir(input_folder):
 
@@ -71,12 +74,13 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                     ED_frame = int(infos['ED'])
                     ES_frame = int(infos['ES'])
 
-
                     for file in glob.glob(os.path.join(folder_path, 'patient???_frame??.nii.gz')):
 
                         print(' ----- Doing image: -------------------------')
                         print(file)
                         print(' --------------------------------------------')
+
+                        logging.info('Doing: %s' % file)
 
                         file_img = file
                         file_base = file.split('.nii.gz')[0]
@@ -96,6 +100,7 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                         predictions = []
 
+                        start_time = time.time()
                         for zz in range(img.shape[2]):
 
                             slice_img = np.squeeze(img[:,:,zz])
@@ -159,6 +164,13 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                         prediction_arr = np.transpose(np.asarray(predictions, dtype=np.uint8), (1,2,0))
 
+                        elapsed_time = time.time() - start_time
+                        total_time += elapsed_time
+                        total_volumes += 1
+
+                        logging.info('Evaluation of volume took %f secs.' % elapsed_time)
+                        print('Evaluation of volume took %f secs.' % elapsed_time)
+
                         if frame == ED_frame:
                             frame_suffix = '_ED'
                         elif frame == ES_frame:
@@ -196,6 +208,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                         # Calculate wrong voxels
                         wrong_pixels = np.sum(difference_mask)
                         print('Wrong pixels: %d' % wrong_pixels)
+
+        print('Average time per volume: %f' % (total_time/total_volumes))
 
 
 # def get_prediction_for_image(img, sess, images_placeholder, mask, softmax, model_path, inference_handle):
@@ -270,13 +284,15 @@ if __name__ == '__main__':
     # model_path = os.path.join(base_path, 'unet_bn_fliplr')
     # model_path = os.path.join(base_path, 'unet_bn_rotate')
     # model_path = os.path.join(base_path, 'unet_bn_rerun')
-    model_path = os.path.join(base_path, 'unet_dilated_bn')
+    # model_path = os.path.join(base_path, 'unet_dilated_bn')
+    # model_path = os.path.join(base_path, 'unet_bn_RV_more_weight')
+    model_path = os.path.join(base_path, 'unet_bn_merged_wenjia_new')
 
     # inference_handle = model_zoo.lisa_net_deeper
     # inference_handle = model_zoo.lisa_net_deeper_bn
     # inference_handle = model_zoo.dilation_after_max_pool
-    # inference_handle = model_zoo.unet_bn
-    inference_handle = model_zoo.unet_dilated_bn
+    inference_handle = model_zoo.unet_bn
+    # inference_handle = model_zoo.unet_dilated_bn
     # inference_handle = model_zoo.VGG16_FCN_8_bn
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
