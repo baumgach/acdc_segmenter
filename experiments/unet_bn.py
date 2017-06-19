@@ -1,7 +1,7 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_extremeweighting'
+experiment_name = 'unet_bn_RV_more_weight'
 
 batch_size = 10
 learning_rate = 0.01
