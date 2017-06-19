@@ -1,11 +1,11 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_RV_more_weight'
+experiment_name = 'unet_bn_merged_wenjia_new'
 
 batch_size = 10
 learning_rate = 0.01
-data_file = 'newdata_288x288.hdf5'
+data_file = 'newwenjia_acdc_merged.hdf5'  # 'newdata_288x288.hdf5'
 model_handle = model_zoo.unet_bn
 optimizer_handle = tf.train.AdamOptimizer
 

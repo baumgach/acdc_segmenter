@@ -2,9 +2,9 @@ import h5py
 import numpy as np
 
 file1 = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/newdata_288x288.hdf5'
-file2 = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/wenjiadata_288x288.hdf5'
+file2 = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/newwenjiadata_288x288.hdf5'
 
-out_file = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/wenjia_acdc_merged.hdf5'
+out_file = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/newwenjia_acdc_merged.hdf5'
 
 data1 = h5py.File(file1, 'r')
 data2 = h5py.File(file2, 'r')
