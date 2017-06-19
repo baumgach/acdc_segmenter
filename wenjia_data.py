@@ -125,8 +125,8 @@ class DataMakerACDC:
                                 mask_cropped[:, y_c:y_c + y] = mask_rescaled[x_s:x_s + self.n_x, :]
 
                             else:
-                                slice_cropped[x_c:x_c+x, y_c:y_c + x] = slice_rescaled[:, :]
-                                mask_cropped[x_c:x_c+x, y_c:y_c + x] = mask_rescaled[:, :]
+                                slice_cropped[x_c:x_c+x, y_c:y_c + y] = slice_rescaled[:, :]
+                                mask_cropped[x_c:x_c+x, y_c:y_c + y] = mask_rescaled[:, :]
 
 
                         # cv2.imshow('img', image_utils.convert_to_uint8(slice_cropped))
