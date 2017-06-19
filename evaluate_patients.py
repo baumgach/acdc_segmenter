@@ -40,12 +40,16 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
     with tf.Session() as sess:
 
         sess.run(init)
+
+        # Get the latest checkpoint file
         #saver.restore(sess, tf.train.latest_checkpoint(model_path))
-        #chkpt = tf.train.get_checkpoint_state(model_path, latest_filename='model_best_dice.ckpt-5799')
-        #print('Checkpoint into:')
-        #print(chkpt)
-        saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
-        #saver.restore(sess, chkpt)
+
+        # Use specific best file
+        # saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
+
+        # automatically find latest best file
+        checkpoint_path = utils.get_best_model_checkpoint_path(model_path, 'model_best_xent.ckpt')
+        saver.restore(sess, checkpoint_path)
 
 
         for folder in os.listdir(input_folder):
@@ -263,6 +267,7 @@ if __name__ == '__main__':
     #model_path = os.path.join(base_path, 'VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
     #model_path = os.path.join(base_path, 'unet_bn_long')
     model_path = os.path.join(base_path, 'unet_bn_lisadata')
+    # model_path = os.path.join(base_path, 'unet_bn_rerun')
 
     # inference_handle = model_zoo.lisa_net_deeper
     # inference_handle = model_zoo.lisa_net_deeper_bn

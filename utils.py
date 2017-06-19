@@ -2,6 +2,7 @@ import nibabel as nib
 import numpy as np
 import cv2
 import os
+import glob
 
 def makefolder(folder):
     """
@@ -24,4 +25,19 @@ def save_nii(img_path, data, affine, header):
 
     nimg = nib.Nifti1Image(data, affine=affine, header=header)
     nimg.to_filename(img_path)
+
+def get_best_model_checkpoint_path(folder, name):
+
+    iteration_nums = []
+    for file in glob.glob(os.path.join(folder, '%s*.meta' % name)):
+
+        file_base, postfix_and_number, rest = file.split('.')[0:3]
+        it_num = int(postfix_and_number.split('-')[-1])
+
+        iteration_nums.append(it_num)
+
+    latest_iteration = np.max(iteration_nums)
+
+    return os.path.join(folder, name + '-' + str(latest_iteration))
+
 
