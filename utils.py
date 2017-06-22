@@ -4,6 +4,7 @@ import cv2
 import os
 import glob
 import logging
+from skimage import measure
 
 def makefolder(folder):
     """
@@ -46,3 +47,32 @@ def log_and_print(text):
     logging.info(text)
 
 
+def post_process_prediction_3D(img):
+    """
+    Hook for some possible image postprocessing.
+
+    - keep only largest connected component for each structure
+
+    :param img:
+    :return: processed image
+    """
+
+    out_img = np.zeros(img.shape, dtype=np.uint8)
+
+    for struc_id in [1, 2, 3]:
+
+        binary_img = img == struc_id
+        blobs = measure.label(binary_img, connectivity=1)
+
+        props = measure.regionprops(blobs)
+
+        if not props:
+            continue
+
+        area = [ele.area for ele in props]
+        largest_blob_ind = np.argmax(area)
+        largest_blob_label = props[largest_blob_ind].label
+
+        out_img[blobs == largest_blob_label] = struc_id
+
+    return out_img
