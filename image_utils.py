@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import tfwrapper.utils as tf_utils
+from skimage import transform
 
 def grow_rectangle(bdr_x, bdr_y, bdr_w, bdr_h, grow_size):
     return bdr_x-grow_size, bdr_y-grow_size, bdr_w+grow_size, bdr_h+grow_size
@@ -139,6 +140,22 @@ def rescale_labels_lisa_style(label_map, scale, num_labels):
 
     return out_array
 
+# def rescale_labels_lisa_style_3D(label_map, scale_vector, num_labels):
+#     # TODO: Untested function
+#
+#     label_map_one_hot = tf_utils.to_onehot_image(label_map, num_labels)
+#
+#     out_labels = []
+#     for ll in range(num_labels):
+#         lbl = label_map_one_hot[:,:,ll]
+#         lbl_sc = transform.rescale(lbl.astype(np.float), scale_vector, order=1, preserve_range=True, multichannel=False)
+#         out_labels.append(lbl_sc)
+#     out_array_one_hot = np.asarray(out_labels)
+#     out_array = np.argmax(out_array_one_hot, axis=0).astype(np.uint8)
+#
+#     return out_array
+
+
 def resize_labels_lisa_style(label_map, size, num_labels):
 
     label_map_one_hot = tf_utils.to_onehot_image(label_map, num_labels)
@@ -151,3 +168,16 @@ def resize_labels_lisa_style(label_map, size, num_labels):
     out_array = np.argmax(out_array_one_hot, axis=0).astype(np.uint8)
 
     return out_array
+
+def scale_z_with_max(label_map, scale=2):
+
+    nx, ny, nz = label_map.shape
+
+    new_label_map = np.zeros((nx,ny,nz//scale))
+
+    for ii in range(nz//scale):
+
+        curr_slice = np.max(label_map[:,:,scale*ii:scale*ii+scale], axis=-1)
+        new_label_map[:,:,ii] = curr_slice
+
+    return new_label_map

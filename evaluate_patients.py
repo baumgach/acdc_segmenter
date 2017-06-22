@@ -17,6 +17,8 @@ import tensorflow as tf
 import model_zoo
 import time
 
+# import matplotlib.pyplot as plt
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 import pydensecrf.densecrf as dcrf
@@ -34,7 +36,9 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
     nx = 288
     ny = 288
 
-    images_pl, labels_placeholder = placeholder_inputs(1, nx, ny)
+    batch_size = 1
+
+    images_pl, labels_placeholder = placeholder_inputs(batch_size, nx, ny)
     mask_pl, softmax_pl = model.predict(images_pl, inference_handle)
     saver = tf.train.Saver()
     init = tf.global_variables_initializer()
@@ -131,11 +135,21 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                                 else:
                                     slice_cropped[x_c:x_c+x, y_c:y_c + y] = slice_rescaled[:, :]
 
+                            # plt.figure()
+                            # plt.imshow(slice_cropped, cmap='gray')
+
                             # GET PREDICTION
-                            network_input = np.float32(np.reshape(slice_cropped, (1, nx, ny, 1)))
+                            network_input = np.float32(np.tile(np.reshape(slice_cropped, (nx, ny, 1)), (batch_size, 1, 1, 1)))
                             mask_out, logits_out = sess.run([mask_pl, softmax_pl], feed_dict={images_pl: network_input})
-                            prediction_cropped = np.squeeze(mask_out)
+
+                            # plt.figure()
+                            # plt.imshow(np.squeeze(mask_out[0,...]))
+                            # plt.show()
+
+                            prediction_cropped = np.squeeze(mask_out[0,...])
                             prediction_cropped = post_process_prediction(prediction_cropped)
+
+
 
                             # ASSEMBLE BACK THE SLICES
                             slice_predictions = np.zeros((x,y))

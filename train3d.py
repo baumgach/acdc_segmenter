@@ -16,17 +16,25 @@ import model as model
 import tfwrapper.utils as tf_utils
 from background_generator import BackgroundGenerator
 
-from config.train import *
-from config.system import *
+from config.threedee.train import *
+from config.threedee.system import *
+
+from skimage import transform
+
+# import matplotlib.pyplot as plt
 
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
-from experiments import unet_bn_fixed as exp_config
+#from experiments.threedee import refine_residual_units as exp_config
+from experiments.threedee import unet_2D_AND_3D as exp_config
+# from experiments.threedee import unet_3d as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
+DOWNSAMPLING_FACTOR = exp_config.down_sampling_factor
+INPUT_CHANNELS = int(exp_config.input_channels)
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()
@@ -40,10 +48,11 @@ if not hostname == local_hostname:
 def placeholder_inputs(batch_size):
 
     images_placeholder = tf.placeholder(tf.float32,
-                                        shape=(batch_size, IMAGE_SIZE[0], IMAGE_SIZE[1], 1), name='images')
+                                        shape=(batch_size, IMAGE_SIZE[0]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[1]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[2], INPUT_CHANNELS), name='images')
     labels_placeholder = tf.placeholder(tf.float32,
-                                        shape=(batch_size, IMAGE_SIZE[0], IMAGE_SIZE[1], NLABELS), name='labels')
+                                        shape=(batch_size, IMAGE_SIZE[0]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[1]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[2], 4), name='labels')
     return images_placeholder, labels_placeholder
+
 
 def do_eval(sess,
             eval_loss,
@@ -58,7 +67,7 @@ def do_eval(sess,
     dice_ii = 0
     num_batches = 0
 
-    for batch in iterate_minibatches(images, labels, batch_size=batch_size, augment_batch=False):  # No aug in evaluation
+    for batch in BackgroundGenerator(iterate_minibatches(images, labels, batch_size=batch_size, augment_batch=False)):  # No aug in evaluation
 
         x, y = batch
 
@@ -82,59 +91,35 @@ def do_eval(sess,
     return avg_loss, avg_dice
 
 
-def augmentation_function(images, labels, **kwargs):
 
-    do_rotations = kwargs.get('do_rotations', False)
-    do_scaleaug = kwargs.get('do_scaleaug', False)
-    do_fliplr = kwargs.get('do_fliplr', False)
+def resize_batch(images, labels, scale):
 
+    batch_size = images.shape[0]
 
     new_images = []
     new_labels = []
-    num_images = images.shape[0]
 
-    for ii in range(num_images):
+    for ii in range(batch_size):
 
         img = np.squeeze(images[ii,...])
         lbl = np.squeeze(labels[ii,...])
 
-        # ROTATE
-        if do_rotations:
-            angles = kwargs.get('angles', (-15,15))
-            random_angle = np.random.uniform(angles[0], angles[1])
-            img = image_utils.rotate_image(img, random_angle)
-            lbl = image_utils.rotate_image(lbl, random_angle, interp=cv2.INTER_NEAREST)
+        scale_u = scale
+        if img.ndim > len(scale):
+            scale_u = scale + (img.ndim-len(scale))*[1]
+        img = transform.rescale(img, scale_u, order=1, preserve_range=True, multichannel=False, mode='constant')
 
-        # RANDOM CROP SCALE
-        if do_scaleaug:
-            offset = kwargs.get('offset', 30)
-            n_x, n_y = img.shape
-            r_y = np.random.random_integers(n_y-offset, n_y)
-            p_x = np.random.random_integers(0, n_x-r_y)
-            p_y = np.random.random_integers(0, n_y-r_y)
+        if lbl.ndim > len(scale):
+            scale_u = scale + (lbl.ndim-len(scale))*[1]
+        lbl = transform.rescale(lbl, scale_u, order=1, preserve_range=True, multichannel=False, mode='constant')
 
-            img = image_utils.resize_image(img[p_y:(p_y+r_y), p_x:(p_x+r_y)],(n_x, n_y))
-            lbl = image_utils.resize_image(lbl[p_y:(p_y + r_y), p_x:(p_x + r_y)], (n_x, n_y), interp=cv2.INTER_NEAREST)
+        new_images.append(img)
+        new_labels.append(lbl)
 
-        # RANDOM FLIP
-        if do_fliplr:
-            coin_flip = np.random.randint(2)
-            if coin_flip == 0:
-                img = np.fliplr(img)
-                lbl = np.fliplr(lbl)
+    img_arr = np.asarray(new_images, dtype=np.float32)
+    lbl_arr = np.asarray(new_labels, dtype=np.uint8)
 
-        # DEBUG VISUALISATION
-        # cv2.imshow('image', image_utils.convert_to_uint8(img))
-        # cv2.imshow('labels', image_utils.convert_to_uint8(lbl))
-        # cv2.waitKey(0)
-
-        new_images.append(img[..., np.newaxis])
-        new_labels.append(lbl[...])
-
-    sampled_image_batch = np.asarray(new_images)
-    sampled_label_batch = np.asarray(new_labels)
-
-    return sampled_image_batch, sampled_label_batch
+    return img_arr, lbl_arr
 
 
 def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
@@ -163,19 +148,23 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
         X = images[batch_indices, ...]
         y = labels[batch_indices, ...]
 
-        X = np.reshape(X, (X.shape[0], IMAGE_SIZE[0], IMAGE_SIZE[1], 1))
-
-        if augment_batch:
-            X, y = augmentation_function(X, y,
-                                         do_rotations=exp_config.do_rotations,
-                                         do_scaleaug=exp_config.do_scaleaug,
-                                         do_fliplr=exp_config.do_fliplr)
-
         y = tf_utils.labels_to_one_hot(y)
 
-        if batch_size == 1:
-            X = X[np.newaxis, ...]
-            y = y[np.newaxis, ...]
+        if not DOWNSAMPLING_FACTOR == 1:
+            X, y = resize_batch(X, y, scale=[1.0/DOWNSAMPLING_FACTOR,1.0/DOWNSAMPLING_FACTOR, 1])
+
+        X = np.reshape(X, (batch_size, IMAGE_SIZE[0]//DOWNSAMPLING_FACTOR, IMAGE_SIZE[1]//DOWNSAMPLING_FACTOR, IMAGE_SIZE[2], INPUT_CHANNELS))
+
+        # if augment_batch:
+        #     X, y = augmentation_function(X, y,
+        #                                  do_rotations=exp_config.do_rotations,
+        #                                  do_scaleaug=exp_config.do_scaleaug,
+        #                                  do_fliplr=exp_config.do_fliplr)
+
+        #
+        # if batch_size == 1:
+        #     X = X[np.newaxis, ...]
+        #     y = y[np.newaxis, ...]
 
         yield X, y
 
@@ -185,25 +174,27 @@ def run_training():
     data = h5py.File(os.path.join(PROJECT_ROOT, exp_config.data_file), 'r')
 
     # the following are HDF5 datasets, not numpy arrays
-    images_train = data['images_train']
+    # feature_maps_train = data['feature_maps_train']
+    feature_maps_train = data['%s_train' % exp_config.input_dataset]
     labels_train = data['masks_train']
 
-    images_val = data['images_test']
+    # feature_maps_val = data['feature_maps_test']
+    feature_maps_val = data['%s_test' % exp_config.input_dataset]
     labels_val = data['masks_test']
 
     if exp_config.use_data_fraction:
-        num_images = images_train.shape[0]
+        num_images = feature_maps_train.shape[0]
         new_last_index = int(float(num_images)*exp_config.use_data_fraction)
 
         logging.warning('USING ONLY FRACTION OF DATA!')
         logging.warning(' - Number of imgs orig: %d, Number of imgs new: %d' % (num_images, new_last_index))
-        images_train = images_train[0:new_last_index,...]
+        feature_maps_train = feature_maps_train[0:new_last_index,...]
         labels_train = labels_train[0:new_last_index,...]
 
     logging.info('Data summary:')
     logging.info(' - Images:')
-    logging.info(images_train.shape)
-    logging.info(images_train.dtype)
+    logging.info(feature_maps_train.shape)
+    logging.info(feature_maps_train.dtype)
     logging.info(' - Labels:')
     logging.info(labels_train.shape)
     logging.info(labels_train.dtype)
@@ -303,10 +294,11 @@ def run_training():
 
             logging.info('EPOCH %d' % epoch)
 
-            for batch in BackgroundGenerator(iterate_minibatches(images_train,
-                                                                 labels_train,
-                                                                 batch_size=exp_config.batch_size,
-                                                                 augment_batch=exp_config.augment_batch)):
+            for batch in BackgroundGenerator(iterate_minibatches(
+                                                feature_maps_train,
+                                                labels_train,
+                                                batch_size=exp_config.batch_size,
+                                                augment_batch=exp_config.augment_batch)):
 
                 # logging.info('step: %d' % step)
 
@@ -320,6 +312,20 @@ def run_training():
 
                 # batch = bgn_train.retrieve()
                 x, y = batch
+
+                # DEBUG:
+                # print(x.shape)
+                # print(y.shape)
+                # xv = np.squeeze(x[0, :, :, 11, :])
+                # yv = np.squeeze(y[0, :, :, 11, :])
+                # print(yv.shape)
+                #
+                # plt.figure()
+                # plt.imshow(xv)
+                # plt.figure()
+                # plt.imshow(yv)
+                # plt.show()
+
 
                 # TEMPORARY HACK (to avoid incomplete batches
                 if y.shape[0] < exp_config.batch_size:
@@ -363,7 +369,7 @@ def run_training():
                                                        images_placeholder,
                                                        labels_placeholder,
                                                        training_time_placeholder,
-                                                       images_train,
+                                                       feature_maps_train,
                                                        labels_train,
                                                        exp_config.batch_size)
 
@@ -379,7 +385,7 @@ def run_training():
                                                    images_placeholder,
                                                    labels_placeholder,
                                                    training_time_placeholder,
-                                                   images_val,
+                                                   feature_maps_val,
                                                    labels_val,
                                                    exp_config.batch_size)
 

@@ -1,9 +1,9 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'lisa_net_deep_bn'
+experiment_name = 'lisa_net_deep_bn_test_batch_size1'
 
-batch_size = 10
+batch_size = 1
 learning_rate = 0.01
 data_file = 'data_288x288.hdf5'
 model_handle = model_zoo.lisa_net_deeper_bn

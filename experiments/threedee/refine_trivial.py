@@ -1,13 +1,14 @@
-import model_zoo
+import models_refine3d
 import tensorflow as tf
 
-experiment_name = 'unet_bn_normal_loss'
+experiment_name = 'refine_trivial_hard_preds_batch_size_1'
 
-batch_size = 10
+batch_size = 1
 learning_rate = 0.01
-data_file = 'newdata_288x288.hdf5'  # 'newdata_288x288.hdf5'
-model_handle = model_zoo.unet_bn
+data_file = 'feature_maps_and_pred.hdf5'  # 'newdata_288x288.hdf5'
+model_handle = models_refine3d.trivial
 optimizer_handle = tf.train.AdamOptimizer
+# optimizer_handle = tf.train.GradientDescentOptimizer
 
 schedule_lr = False
 warmup_training = True
