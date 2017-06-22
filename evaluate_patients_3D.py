@@ -259,7 +259,8 @@ def score_cases(input_folder, output_folder, model_path, inference_handle, downs
                     # prediction = np.argmax(prediction, axis=3)
 
                     prediction = np.asarray(prediction, dtype=np.uint8)
-                   
+                    prediction = utils.post_process_prediction_3D(prediction)
+
 
                     if frame == ED_frame:
                         frame_suffix = '_ED'

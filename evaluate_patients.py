@@ -178,6 +178,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                         prediction_arr = np.transpose(np.asarray(predictions, dtype=np.uint8), (1,2,0))
 
+                        prediction_arr = utils.post_process_prediction_3D(prediction_arr)
+
                         elapsed_time = time.time() - start_time
                         total_time += elapsed_time
                         total_volumes += 1
@@ -273,6 +275,7 @@ def post_process_prediction(img):
     # MAP = np.reshape(MAP, [nx, ny])
 
     return img
+
 
 if __name__ == '__main__':
 
