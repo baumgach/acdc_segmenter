@@ -255,15 +255,8 @@ def run_training():
         saver_best_dice = tf.train.Saver()
         saver_best_xent = tf.train.Saver()
 
-        # GPU settings
-        gpu_memory_fraction = 1.0  # Fraction of GPU memory to use
-        allow_growth = False
-        config = tf.ConfigProto(gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction,
-                                                          allow_growth=allow_growth))
-
-
         # Create a session for running Ops on the Graph.
-        sess = tf.Session(config=config)
+        sess = tf.Session(config=gpu_config)
 
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(LOG_DIR, sess.graph)
