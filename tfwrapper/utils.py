@@ -12,12 +12,18 @@ def get_rhs_dim(tensor):
 
 def to_onehot_image(labels, n_class=4):
 
-    n_x, n_y = labels.shape
-    onehot = np.zeros((n_x, n_y, n_class))
+    if labels.ndim == 3:
+        n_x, n_y, n_z = labels.shape
+        onehot = np.zeros((n_x, n_y, n_z, n_class))
+    elif labels.ndim == 2:
+        n_x, n_y = labels.shape
+        onehot = np.zeros((n_x, n_y, n_class))
+    else:
+        raise ValueError('Input label dimensions must be 2, or 3.')
 
     for cc in range(n_class):
         mask_cc = (labels == cc).astype(int)
-        onehot[:,:,cc] = mask_cc
+        onehot[...,cc] = mask_cc
 
     return onehot
 

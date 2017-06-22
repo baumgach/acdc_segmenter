@@ -26,7 +26,7 @@ from skimage import transform
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
 #from experiments.threedee import refine_residual_units as exp_config
-from experiments.threedee import unet_2D_AND_3D as exp_config
+from experiments.threedee import unet_2D_AND_3D_small as exp_config
 # from experiments.threedee import unet_3d as exp_config
 ########################################################################################
 
@@ -432,9 +432,10 @@ def run_training():
 
 
 def main(_):
-    if tf.gfile.Exists(LOG_DIR):
-        tf.gfile.DeleteRecursively(LOG_DIR)
-    tf.gfile.MakeDirs(LOG_DIR)
+    # if tf.gfile.Exists(LOG_DIR):
+    #     tf.gfile.DeleteRecursively(LOG_DIR)
+    if not tf.gfile.Exists(LOG_DIR):
+        tf.gfile.MakeDirs(LOG_DIR)
 
     # Copy experiment config file
     shutil.copy( exp_config.__file__, LOG_DIR)

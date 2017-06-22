@@ -17,14 +17,21 @@ def activation_layer(bottom, name, activation=tf.nn.relu):
 
     return op
 
-def max_pool_layer(x, kernel_size=(2,2), strides=(2,2), padding="SAME"):
-
-    # TODO: Could be removed as it simply shadows the tf function
+def max_pool_layer2d(x, kernel_size=(2, 2), strides=(2, 2), padding="SAME"):
 
     kernel_size_aug = [1, kernel_size[0], kernel_size[1], 1]
     strides_aug = [1, strides[0], strides[1], 1]
 
     op = tf.nn.max_pool(x, ksize=kernel_size_aug, strides=strides_aug, padding=padding)
+
+    return op
+
+def max_pool_layer3d(x, kernel_size=(2, 2, 2), strides=(2, 2, 2), padding="SAME"):
+
+    kernel_size_aug = [1, kernel_size[0], kernel_size[1], kernel_size[2], 1]
+    strides_aug = [1, strides[0], strides[1], strides[2], 1]
+
+    op = tf.nn.max_pool3d(x, ksize=kernel_size_aug, strides=strides_aug, padding=padding)
 
     return op
 
@@ -41,7 +48,7 @@ def conv2D_layer(bottom,
                  weight_init='he_normal',
                  **kwargs):
 
-    bottom_num_filters = bottom.get_shape().as_list()[3]
+    bottom_num_filters = bottom.get_shape().as_list()[-1]
     # bottom_num_filters = tf.shape(bottom)[3]
 
     weight_shape = [kernel_size[0], kernel_size[1], bottom_num_filters, num_filters]
@@ -71,14 +78,57 @@ def conv2D_layer(bottom,
         tf.summary.histogram(biases.name, biases)
         tf.summary.histogram(op.op.name + '/activations', op)
 
-    return op
+        return op
+
+
+def conv3D_layer(bottom,
+                 name,
+                 kernel_size=(3,3,3),
+                 num_filters=32,
+                 strides=(1,1,1),
+                 activation=tf.nn.relu,
+                 padding="SAME",
+                 weight_init='he_normal',
+                 **kwargs):
+
+    bottom_num_filters = bottom.get_shape().as_list()[-1]
+    # bottom_num_filters = tf.shape(bottom)[3]
+
+    weight_shape = [kernel_size[0], kernel_size[1], kernel_size[2], bottom_num_filters, num_filters]
+    bias_shape = [num_filters]
+
+    strides_augm = [1, strides[0], strides[1], strides[2], 1]
+
+    with tf.name_scope(name):
+
+        if weight_init == 'he_normal':
+            # N = tf.cast(_get_rhs_dim(bottom), tf.float32)
+            N = utils.get_rhs_dim(bottom)
+            weights = _weight_variable_he_normal(weight_shape, N, name=name + '_w')
+        elif weight_init =='simple':
+            weights = _weight_variable_simple(weight_shape, name=name + '_w')
+        else:
+            raise ValueError('Unknown weight initialisation method %s' % weight_init)
+
+        biases = _bias_variable(bias_shape, name=name + '_b')
+
+        op = tf.nn.conv3d(bottom, filter=weights, strides=strides_augm, padding=padding)
+        op = tf.nn.bias_add(op, biases)
+        op = activation(op)
+
+        # Tensorboard variables
+        tf.summary.histogram(weights.name, weights)
+        tf.summary.histogram(biases.name, biases)
+        tf.summary.histogram(op.op.name + '/activations', op)
+
+        return op
 
 
 def deconv2D_layer(bottom,
                    name,
                    kernel_size=(3,3),
                    num_filters=32,
-                   strides=(2,2),
+                   strides=(4,4),
                    output_shape=None,
                    activation=tf.nn.relu,
                    padding="SAME",
@@ -140,7 +190,61 @@ def deconv2D_layer(bottom,
         tf.summary.histogram(biases.name, biases)
         tf.summary.histogram(op.op.name + '/activations', op)
 
-    return op
+        return op
+
+
+def deconv3D_layer(bottom,
+                   name,
+                   kernel_size=(4,4,4),
+                   num_filters=32,
+                   strides=(2,2,2),
+                   output_shape=None,
+                   activation=tf.nn.relu,
+                   padding="SAME",
+                   weight_init='he_normal',
+                   **kwargs):
+
+    bottom_shape = bottom.get_shape().as_list()
+
+    if output_shape is None:
+        output_shape = tf.stack([bottom_shape[0], bottom_shape[1]*strides[0], bottom_shape[2]*strides[1], bottom_shape[3]*strides[2], num_filters])
+
+    bottom_num_filters = bottom_shape[4]
+
+    weight_shape = [kernel_size[0], kernel_size[1], kernel_size[2], num_filters, bottom_num_filters]
+
+    bias_shape = [num_filters]
+
+    strides_augm = [1, strides[0], strides[1], strides[2], 1]
+
+    with tf.name_scope(name):
+
+        if weight_init == 'he_normal':
+            N = utils.get_rhs_dim(bottom)
+            weights = _weight_variable_he_normal(weight_shape, N, name=name + '_w')
+        elif weight_init =='simple':
+            weights = _weight_variable_simple(weight_shape, name=name + '_w')
+        elif weight_init == 'bilinear':
+            weights = _weight_variable_bilinear(weight_shape, name=name + '_w')
+        else:
+            raise ValueError('Unknown weight initialisation method %s' % weight_init)
+
+        biases = _bias_variable(bias_shape, name=name + '_b')
+
+        op = tf.nn.conv3d_transpose(bottom,
+                                    filter=weights,
+                                    output_shape=output_shape,
+                                    strides=strides_augm,
+                                    padding=padding)
+        op = tf.nn.bias_add(op, biases)
+        op = activation(op)
+
+        # Tensorboard variables
+        tf.summary.histogram(weights.name, weights)
+        tf.summary.histogram(biases.name, biases)
+        tf.summary.histogram(op.op.name + '/activations', op)
+
+        return op
 
 
 def conv2D_dilated_layer(bottom,
@@ -181,7 +285,7 @@ def conv2D_dilated_layer(bottom,
         tf.summary.histogram(biases.name, biases)
         tf.summary.histogram(op.op.name + '/activations', op)
 
-    return op
+        return op
 
 ### BATCH_NORM SHORTCUTS #####################################################################################
 
@@ -203,12 +307,24 @@ def batch_normalisation_layer(bottom, name, training, **kwargs):
 
         is_conv_layer = True if tensor_dim == 4 else False
 
+        if tensor_dim == 2:
+            # must be a dense layer
+            moments_over_axes = [0]
+        elif tensor_dim == 4:
+            # must be a 2D conv layer
+            moments_over_axes = [0, 1, 2]
+        elif tensor_dim == 5:
+            # must be a 3D conv layer
+            moments_over_axes = [0, 1, 2, 3]
+        else:
+            # is not likely to be something reasonable
+            raise ValueError('Tensor dim %d is not supported by this batch_norm layer' % tensor_dim)
+
+
         init_beta = tf.constant(0.0, shape=[n_out], dtype=tf.float32)
         init_gamma = tf.constant(1.0, shape=[n_out],dtype=tf.float32)
         beta = tf.get_variable(name=name+'_beta', dtype=tf.float32, initializer=init_beta, regularizer=None, trainable=True)
         gamma = tf.get_variable(name=name+'_gamma', dtype=tf.float32, initializer=init_gamma, regularizer=None, trainable=True)
-
-        moments_over_axes = [0,1,2] if is_conv_layer else [0]
 
         batch_mean, batch_var = tf.nn.moments(bottom, moments_over_axes, name=name+'_moments')
         ema = tf.train.ExponentialMovingAverage(decay=0.5)
@@ -221,7 +337,7 @@ def batch_normalisation_layer(bottom, name, training, **kwargs):
         mean, var = tf.cond(training, mean_var_with_update, lambda: (ema.average(batch_mean), ema.average(batch_var)))
         normed = tf.nn.batch_normalization(bottom, mean, var, beta, gamma, 1e-3)
 
-    return normed
+        return normed
 
 
 def conv2D_layer_bn(bottom,
@@ -250,9 +366,36 @@ def conv2D_layer_bn(bottom,
 
     return relu
 
+
+def conv3D_layer_bn(bottom,
+                    name,
+                    kernel_size=(3,3,3),
+                    num_filters=32,
+                    strides=(1,1,1),
+                    activation=tf.nn.relu,
+                    padding="SAME",
+                    weight_init='he_normal',
+                    training=tf.constant(False, dtype=tf.bool),
+                    **kwargs):
+
+    conv = conv3D_layer(bottom=bottom,
+                        name=name,
+                        kernel_size=kernel_size,
+                        num_filters=num_filters,
+                        strides=strides,
+                        activation=no_activation,
+                        padding=padding,
+                        weight_init=weight_init)
+
+    conv_bn = batch_normalisation_layer(conv, name + '_bn', training)
+
+    relu = activation(conv_bn)
+
+    return relu
+
 def deconv2D_layer_bn(bottom,
                       name,
-                      kernel_size=(3,3),
+                      kernel_size=(4,4),
                       num_filters=32,
                       strides=(2,2),
                       output_shape=None,
@@ -277,6 +420,36 @@ def deconv2D_layer_bn(bottom,
     relu = activation(deco_bn)
 
     return relu
+
+
+def deconv3D_layer_bn(bottom,
+                      name,
+                      kernel_size=(4,4,4),
+                      num_filters=32,
+                      strides=(2,2,2),
+                      output_shape=None,
+                      activation=tf.nn.relu,
+                      padding="SAME",
+                      weight_init='he_normal',
+                      training=tf.constant(True, dtype=tf.bool),
+                      **kwargs):
+
+    deco = deconv3D_layer(bottom=bottom,
+                          name=name,
+                          kernel_size=kernel_size,
+                          num_filters=num_filters,
+                          strides=strides,
+                          output_shape=output_shape,
+                          activation=no_activation,
+                          padding=padding,
+                          weight_init=weight_init)
+
+    deco_bn = batch_normalisation_layer(deco, name + '_bn', training=training)
+
+    relu = activation(deco_bn)
+
+    return relu
+
 
 def conv2D_dilated_layer_bn(bottom,
                            name,
@@ -340,7 +513,7 @@ def dense_layer(bottom,
         tf.summary.histogram(biases.name, biases)
         tf.summary.histogram(op.op.name + '/activations', op)
 
-    return op
+        return op
 
 ### VARIABLE INITIALISERS ####################################################################################
 
