@@ -21,7 +21,8 @@ from config.system import *
 
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
-from experiments import unet_bn_fixed_unw_xent as exp_config
+# from experiments import unet_bn_fixed_unw_xent as exp_config
+from experiments import unet_bn_fixed_dice as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
