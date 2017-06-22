@@ -78,13 +78,13 @@ def score_cases(input_folder, output_folder, model_path, inference_handle, downs
     sess3d.run(init3d)
 
     # automatically find latest best file
-    checkpoint_path = utils.get_best_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+    checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
     logging.info('Checkpoint path: %s' % checkpoint_path)
     saver3d.restore(sess3d, checkpoint_path)
 
     if pre_classifier:
         logging.info('Also loading preclassifier')
-        checkpoint_path = utils.get_best_model_checkpoint_path(preclassifier_path, 'model_best_dice.ckpt')
+        checkpoint_path = utils.get_latest_model_checkpoint_path(preclassifier_path, 'model_best_dice.ckpt')
         saver2d.restore(sess2d, checkpoint_path)
 
     for folder in os.listdir(input_folder):

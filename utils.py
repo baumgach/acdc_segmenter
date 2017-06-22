@@ -27,7 +27,7 @@ def save_nii(img_path, data, affine, header):
     nimg = nib.Nifti1Image(data, affine=affine, header=header)
     nimg.to_filename(img_path)
 
-def get_best_model_checkpoint_path(folder, name):
+def get_latest_model_checkpoint_path(folder, name):
 
     iteration_nums = []
     for file in glob.glob(os.path.join(folder, '%s*.meta' % name)):

@@ -66,7 +66,7 @@ def generate_featuremaps(input_folder, output_file, model_path):
         sess.run(init)
 
         # automatically find latest best file
-        checkpoint_path = utils.get_best_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
         saver.restore(sess, checkpoint_path)
 
         diag_list = {'test': [], 'train': []}

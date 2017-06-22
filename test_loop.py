@@ -86,7 +86,7 @@ with tf.Session() as sess:
     # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug_refunweighted'))
     # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/unet_bn_adam_reg0.00000_lr0.01_aug_2'))
 
-    checkpoint_path = utils.get_best_model_checkpoint_path('acdc_logdir/unet_bn_merged_wenjia_new', 'model_best_dice.ckpt')
+    checkpoint_path = utils.get_latest_model_checkpoint_path('acdc_logdir/unet_bn_merged_wenjia_new', 'model_best_dice.ckpt')
     saver.restore(sess, checkpoint_path)
 
     ind = -1

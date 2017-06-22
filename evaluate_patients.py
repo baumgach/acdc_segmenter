@@ -53,7 +53,7 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
         # saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
 
         # automatically find latest best file
-        checkpoint_path = utils.get_best_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
         saver.restore(sess, checkpoint_path)
 
         total_time = 0
