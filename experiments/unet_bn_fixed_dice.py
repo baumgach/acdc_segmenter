@@ -1,7 +1,7 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_fixed_undw_xent'
+experiment_name = 'unet_bn_fixed_dice'
 
 batch_size = 6
 learning_rate = 0.01
@@ -13,7 +13,7 @@ schedule_lr = False
 warmup_training = True
 weight_decay = 0.00000
 momentum = None
-loss_type = 'crossentropy'  # crossentropy/weighted_crossentropy/dice
+loss_type = 'dice'  # crossentropy/weighted_crossentropy/dice
 
 # Augmentation settings
 augment_batch = False
