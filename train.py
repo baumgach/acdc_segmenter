@@ -21,7 +21,7 @@ from config.system import *
 
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
-from experiments import unet_bn_fixed as exp_config
+from experiments import unet_bn_fixed_unw_xent as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -180,7 +180,17 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
         yield X, y
 
 
-def run_training():
+def run_training(continue_run):
+
+    init_step = 0
+    if continue_run:
+        logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! Continuing previous run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        init_checkpoint_path = utils.get_latest_model_checkpoint_path(LOG_DIR, 'model.ckpt')
+        logging.info('Checkpoint path: %s' % init_checkpoint_path)
+        init_step = int(init_checkpoint_path.split('/')[-1].split('-')[-1]) + 1  # plus 1 b/c otherwise starts with eval
+        logging.info('Latest step was: %d' % init_step)
+        logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
 
     data = h5py.File(os.path.join(PROJECT_ROOT, exp_config.data_file), 'r')
 
@@ -282,7 +292,11 @@ def run_training():
         # Run the Op to initialize the variables.
         sess.run(init)
 
-        step = 0
+        if continue_run:
+            # Restore session
+            saver.restore(sess, init_checkpoint_path)
+
+        step = init_step
         curr_lr = exp_config.learning_rate
 
         no_improvement_counter = 0
@@ -419,14 +433,16 @@ def run_training():
 
 
 def main(_):
-    if tf.gfile.Exists(LOG_DIR):
-        tf.gfile.DeleteRecursively(LOG_DIR)
-    tf.gfile.MakeDirs(LOG_DIR)
+
+    continue_run = True
+    if not tf.gfile.Exists(LOG_DIR):
+        tf.gfile.MakeDirs(LOG_DIR)
+        continue_run = False
 
     # Copy experiment config file
     shutil.copy( exp_config.__file__, LOG_DIR)
 
-    run_training()
+    run_training(continue_run)
 
 
 if __name__ == '__main__':

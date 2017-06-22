@@ -51,7 +51,7 @@ export CUDA_VISIBLE_DEVICES=$SGE_GPU
 source /scratch_net/bmicdl03/code/python/environments/tensorflow-gpu/bin/activate
 
 ## EXECUTION OF PYTHON CODE:
-python /scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/train3d.py
+python /scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/train.py
 
 echo "Hostname was: `hostname`"
 echo "Reached end of job file."
