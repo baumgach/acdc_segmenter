@@ -9,6 +9,7 @@ import glob
 import numpy as np
 import cv2
 import logging
+from skimage import measure
 
 import model as model
 import tensorflow as tf
@@ -164,6 +165,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                         prediction_arr = np.transpose(np.asarray(predictions, dtype=np.uint8), (1,2,0))
 
+                        prediction_arr = post_process_prediction_3D(prediction_arr)
+
                         elapsed_time = time.time() - start_time
                         total_time += elapsed_time
                         total_volumes += 1
@@ -260,6 +263,39 @@ def post_process_prediction(img):
 
     return img
 
+def post_process_prediction_3D(img):
+    """
+    Hook for some possible image postprocessing.
+    
+    - keep only largest connected component for each structure
+
+    :param img:
+    :return: processed image
+    """
+
+
+    out_img = np.zeros(img.shape, dtype=np.uint8)
+
+    for struc_id in [1, 2, 3]:
+
+        binary_img = img == struc_id
+        blobs = measure.label(binary_img, connectivity=1)
+
+        props = measure.regionprops(blobs)
+
+        if not props:
+            continue
+
+        area = [ele.area for ele in props]
+        largest_blob_ind = np.argmax(area)
+        largest_blob_label = props[largest_blob_ind].label
+
+        out_img[blobs == largest_blob_label] = struc_id
+
+
+
+    return out_img
+
 if __name__ == '__main__':
 
     base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
@@ -295,8 +331,16 @@ if __name__ == '__main__':
     # inference_handle = model_zoo.unet_dilated_bn
     # inference_handle = model_zoo.VGG16_FCN_8_bn
 
-    input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
-    output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
+    base_path = '/home/kochl/experiments/acdc-2017/logs'
+    model_path = os.path.join(base_path, 'lisa_debug_nornn_4')
+    inference_handle = model_zoo.rnncrf
+    inference_handle = model_zoo.unet_bn
+
+    # input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
+    # output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
+
+    input_path = '/media/biomed/DATA/MICCAI2017_ACDC_Challenge_Heart/training'
+    output_path = '/home/kochl/experiments/acdc-2017/pred_blobs_nocorr'
 
     path_pred = os.path.join(output_path, 'prediction')
     path_gt = os.path.join(output_path, 'ground_truth')
