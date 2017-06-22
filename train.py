@@ -22,6 +22,9 @@ from config.system import *
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
 from experiments import unet_bn_fixed as exp_config
+from experiments import unet_bn as exp_config
+from experiments import lisa_debug_rnn as exp_config
+# from experiments import lisa_debug_nornn as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -219,6 +222,18 @@ def run_training():
         learning_rate_placeholder = tf.placeholder(tf.float32, shape=[])
         training_time_placeholder = tf.placeholder(tf.bool, shape=[])
 
+        #############################
+        # hacky hack
+        sess = tf.Session()
+
+        other_model = exp_config.hotstart_model_path + '.meta'
+
+        saver_other = tf.train.import_meta_graph(other_model)
+        saver_other.restore(sess, exp_config.hotstart_model_path)
+
+
+
+
         tf.summary.scalar('learning_rate', learning_rate_placeholder)
 
         # Build a Graph that computes predictions from the inference model.
@@ -255,15 +270,17 @@ def run_training():
         saver_best_dice = tf.train.Saver()
         saver_best_xent = tf.train.Saver()
 
-        # GPU settings
-        gpu_memory_fraction = 1.0  # Fraction of GPU memory to use
-        allow_growth = False
-        config = tf.ConfigProto(gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction,
-                                                          allow_growth=allow_growth))
+        # saver_variables = tf.train.Saver(tf.trainable_variables())
 
-
-        # Create a session for running Ops on the Graph.
-        sess = tf.Session(config=config)
+        # # GPU settings
+        # gpu_memory_fraction = 1.0  # Fraction of GPU memory to use
+        # allow_growth = False
+        # config = tf.ConfigProto(gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction,
+        #                                                   allow_growth=allow_growth))
+        #
+        # # Create a session for running Ops on the Graph.
+        # sess = tf.Session(config=config)
+        sess = tf.Session()
 
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(LOG_DIR, sess.graph)
@@ -288,6 +305,18 @@ def run_training():
 
         # Run the Op to initialize the variables.
         sess.run(init)
+
+        if exp_config.hotstart_model_path is not None:
+            saver.restore(sess, exp_config.hotstart_model_path)
+
+        # vars_file = os.path.join(LOG_DIR, 'model_vars.ckpt')
+        # saver_variables.save(sess, vars_file)
+
+        other_model = '/home/kochl/experiments/acdc-2017/logs/lisa_debug_nornn_4/model.ckpt-47899.meta'
+
+        saver_other = tf.train.import_meta_graph(other_model)
+        saver_other.restore(sess, tf.train.latest_checkpoint('./'))
+
 
         step = 0
         curr_lr = exp_config.learning_rate

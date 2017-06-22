@@ -57,7 +57,10 @@ def placeholder_inputs(batch_size):
     labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size,288, 288, 1), name='labels')
     return images_placeholder, labels_placeholder
 
-data = h5py.File('newdata_288x288.hdf5', 'r')
+data_file = '/media/biomed/DATA/MICCAI2017_ACDC_Challenge_Heart/data_288x288.hdf5'
+data = h5py.File(data_file, 'r')
+
+# data = h5py.File('newdata_288x288.hdf5', 'r')
 # images_val = data['images_test'][:]
 # labels_val = data['masks_test'][:]
 images_val = data['images_test'][:]
@@ -71,6 +74,7 @@ images_placeholder, labels_placeholder = placeholder_inputs(1)
 
 # inference_handle = model_zoo.lisa_net_deeper
 inference_handle = model_zoo.unet_bn
+# inference_handle = model_zoo.rnncrf
 
 mask, softmax = model.predict(images_placeholder, inference_handle)
 
@@ -84,9 +88,10 @@ with tf.Session() as sess:
     sess.run(init)
     # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn'))
     # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug_refunweighted'))
-    # saver.restore(sess, tf.train.latest_checkpoint('./acdc_logdir/unet_bn_adam_reg0.00000_lr0.01_aug_2'))
 
     checkpoint_path = utils.get_best_model_checkpoint_path('acdc_logdir/unet_bn_merged_wenjia_new', 'model_best_dice.ckpt')
+    checkpoint_path = utils.get_best_model_checkpoint_path('/home/kochl/experiments/acdc-2017/logs/lisa_debug_nornn', 'model_best_dice.ckpt')
+
     saver.restore(sess, checkpoint_path)
 
     ind = -1
