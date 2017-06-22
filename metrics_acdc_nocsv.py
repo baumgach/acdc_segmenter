@@ -40,7 +40,7 @@ import re
 import argparse
 import nibabel as nib
 import pandas as pd
-from medpy.metric.binary import hd, dc
+from medpy.metric.binary import hd, dc, assd
 import numpy as np
 
 
@@ -190,22 +190,9 @@ def compute_metrics_on_directories(dir_gt, dir_pred):
     path_pred: string
     Directory of the predicted segmentation maps.
     """
-    lst_gt = sorted(glob(os.path.join(dir_gt, '*')), key=natural_order)
-    lst_pred = sorted(glob(os.path.join(dir_pred, '*')), key=natural_order)
 
-    res = []
-    for p_gt, p_pred in zip(lst_gt, lst_pred):
-        if os.path.basename(p_gt) != os.path.basename(p_pred):
-            raise ValueError("The two files don't have the same name"
-                             " {}, {}.".format(os.path.basename(p_gt),
-                                               os.path.basename(p_pred)))
+    res_mat, _, _ = compute_metrics_on_directories_raw(dir_gt, dir_pred)
 
-        gt, _, header = load_nii(p_gt)
-        pred, _, _ = load_nii(p_pred)
-        zooms = header.get_zooms()
-        res.append(metrics(gt, pred, zooms))
-
-    res_mat = np.asarray(res, dtype=np.float)
     dice1 = np.mean(res_mat[:,0])
     dice2 = np.mean(res_mat[:,3])
     dice3 = np.mean(res_mat[:,6])
@@ -216,12 +203,107 @@ def compute_metrics_on_directories(dir_gt, dir_pred):
 
     return [dice1, dice2, dice3, vold1, vold2, vold3]
 
+def compute_metrics_on_directories_raw(dir_gt, dir_pred):
+    """
+    Calculates all possible metrics (the ones from the metrics script as well as
+    hausdorff and average symmetric surface distances)
+
+    :param dir_gt: Directory of the ground truth segmentation maps.
+    :param dir_pred: Directory of the predicted segmentation maps.
+    :return:
+    """
+
+    lst_gt = sorted(glob(os.path.join(dir_gt, '*')), key=natural_order)
+    lst_pred = sorted(glob(os.path.join(dir_pred, '*')), key=natural_order)
+
+    res = []
+    cardiac_phase = []
+
+    measure_names = ['Dice LV', 'Volume LV', 'Err LV(ml)',
+                     'Dice RV', 'Volume RV', 'Err RV(ml)', 'Dice MYO', 'Volume MYO', 'Err MYO(ml)',
+                     'Hausdorff LV', 'Hausdorff RV', 'Hausdorff Myo',
+                     'ASSD LV', 'ASSD RV', 'ASSD Myo']
+
+    res_mat = np.zeros((len(lst_gt), len(measure_names)))
+
+    ind = 0
+    for p_gt, p_pred in zip(lst_gt, lst_pred):
+        if os.path.basename(p_gt) != os.path.basename(p_pred):
+            raise ValueError("The two files don't have the same name"
+                             " {}, {}.".format(os.path.basename(p_gt),
+                                               os.path.basename(p_pred)))
+
+        gt, _, header = load_nii(p_gt)
+        pred, _, _ = load_nii(p_pred)
+        zooms = header.get_zooms()
+        res.append(metrics(gt, pred, zooms))
+        cardiac_phase.append(os.path.basename(p_gt).split('.nii.gz')[0].split('_')[-1])
+
+        res_mat[ind, :9] = metrics(gt, pred, zooms)
+
+        for ii, struc in enumerate([3,1,2]):
+
+            gt_binary = (gt == struc) * 1
+            pred_binary = (pred == struc) * 1
+
+            res_mat[ind, 9+ii] = hd(gt_binary, pred_binary, voxelspacing=zooms, connectivity=1)
+            res_mat[ind, 12+ii] = assd(pred_binary, gt_binary, voxelspacing=zooms, connectivity=1)
+
+        ind += 1
+
+    #todo: create and return dataframe instead of messy matrices / lists
+
+    return res_mat, cardiac_phase, measure_names
+
+
+
+def boxplot_metrics(dir_gt, dir_pred):
+
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+
+    metrics_out, phase, measure_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
+    num_subj = len(phase)
+
+    measure_ind_dict = {k: v for v, k in enumerate(measure_names)}
+
+    struc_name = ['LV'] * num_subj + ['RV'] * num_subj + ['Myo'] * num_subj
+
+    dices_list = np.concatenate((metrics_out[:, measure_ind_dict['Dice LV']],
+                                 metrics_out[:, measure_ind_dict['Dice RV']],
+                                 metrics_out[:, measure_ind_dict['Dice MYO']]))
+    hausdorff_list = np.concatenate((metrics_out[:, measure_ind_dict['Hausdorff LV']],
+                                 metrics_out[:, measure_ind_dict['Hausdorff RV']],
+                                 metrics_out[:, measure_ind_dict['Hausdorff Myo']]))
+    assd_list = np.concatenate((metrics_out[:, measure_ind_dict['ASSD LV']],
+                                 metrics_out[:, measure_ind_dict['ASSD RV']],
+                                 metrics_out[:, measure_ind_dict['ASSD Myo']]))
+
+    phases_list = phase * 3
+
+    df = pd.DataFrame({'dice': dices_list, 'hd': hausdorff_list, 'assd': assd_list,
+                      'phase': phases_list, 'struc': struc_name})
+
+    plt.figure()
+    sns.boxplot(x='struc', y='dice', hue='phase', data=df, palette="PRGn")
+    plt.figure()
+    sns.boxplot(x='struc', y='hd', hue='phase', data=df, palette="PRGn")
+    plt.figure()
+    sns.boxplot(x='struc', y='assd', hue='phase', data=df, palette="PRGn")
+
+    return 0
+
+
 def main(path_gt, path_pred):
     """
     Main function to select which method to apply on the input parameters.
     """
 
     if os.path.isdir(path_gt) and os.path.isdir(path_pred):
+
+        boxplot_metrics(path_gt, path_pred)
+
         [dice1, dice2, dice3, vold1, vold2, vold3] = compute_metrics_on_directories(path_gt, path_pred)
 
         print('Dice 1: %f' % dice1)
