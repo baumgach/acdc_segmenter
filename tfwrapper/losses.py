@@ -3,8 +3,21 @@ import numpy as np
 
 def dice_loss(logits, labels, epsilon=1e-10, from_label=1, to_label=-1):
 
-    fg_dice = foreground_dice(logits, labels, epsilon, from_label=from_label, to_label=to_label)
-    return 1.0 - fg_dice
+    with tf.name_scope('dice_loss'):
+
+        prediction = tf.nn.softmax(logits)
+
+        intersection = tf.multiply(prediction, labels)
+        intersec_per_img_per_lab = tf.reduce_sum(intersection, axis=[1, 2])
+
+        l = tf.reduce_sum(prediction, axis=[1, 2])
+        r = tf.reduce_sum(labels, axis=[1, 2])
+
+        dices_per_subj = 2 * intersec_per_img_per_lab / (l + r + epsilon)
+
+        loss = 1 - tf.reduce_mean(tf.slice(dices_per_subj, (0, 1), (-1, -1)))
+
+    return loss
 
 def foreground_dice(logits, labels, epsilon=1e-10, from_label=1, to_label=-1):
     """
