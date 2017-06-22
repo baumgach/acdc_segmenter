@@ -16,7 +16,7 @@
 #$ -l h_rt=06:00:00
 
 ## the maximum memory usage of this job, (below 4G does not make much sense)
-#$ -l h_vmem=40G
+#$ -l h_vmem=30G
 
 # Host and gpu settings
 #$ -l gpu
@@ -51,7 +51,7 @@ export CUDA_VISIBLE_DEVICES=$SGE_GPU
 source /scratch_net/bmicdl03/code/python/environments/tensorflow-gpu/bin/activate
 
 ## EXECUTION OF PYTHON CODE:
-python /scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/train.py
+python /scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/train3d.py
 
 echo "Hostname was: `hostname`"
 echo "Reached end of job file."

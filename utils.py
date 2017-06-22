@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import os
 import glob
+import logging
 
 def makefolder(folder):
     """
@@ -39,5 +40,9 @@ def get_best_model_checkpoint_path(folder, name):
     latest_iteration = np.max(iteration_nums)
 
     return os.path.join(folder, name + '-' + str(latest_iteration))
+
+def log_and_print(text):
+    print(text)
+    logging.info(text)
 
 

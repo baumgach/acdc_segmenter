@@ -101,9 +101,9 @@ class DataMakerACDC:
                         mask_rescaled = image_utils.rescale_image(slice_mask, pixel_size, interp=cv2.INTER_NEAREST)
                         # mask_rescaled = image_utils.rescale_labels_lisa_style(slice_mask, pixel_size, num_labels=4)
 
-                        cv2.imshow('img', image_utils.convert_to_uint8(slice_rescaled))
-                        cv2.imshow('mask', image_utils.convert_to_uint8(mask_rescaled))
-                        cv2.waitKey(400)
+                        # cv2.imshow('img', image_utils.convert_to_uint8(slice_rescaled))
+                        # cv2.imshow('mask', image_utils.convert_to_uint8(mask_rescaled))
+                        # cv2.waitKey(400)
 
                         x, y = slice_rescaled.shape
 
@@ -155,18 +155,18 @@ class DataMakerACDC:
 
                         patient_id_list[train_test].append(patient_id)
 
-        # hdf5_file = h5py.File(self.out_file_name, "w")
+        hdf5_file = h5py.File(self.out_file_name, "w")
 
-        # for tt in ['test', 'train']:
-        #     hdf5_file.create_dataset('images_%s' % tt, data=np.asarray(img_list[tt], dtype=np.float32))
-        #     hdf5_file.create_dataset('masks_%s' % tt, data=np.asarray(mask_list[tt], dtype=np.uint8))
-        #     hdf5_file.create_dataset('diagnosis_%s' % tt, data=np.asarray(diag_list[tt], dtype=np.uint8))
-        #     hdf5_file.create_dataset('weight_%s' % tt, data=np.asarray(weight_list[tt], dtype=np.float32))
-        #     hdf5_file.create_dataset('height_%s' % tt, data=np.asarray(height_list[tt], dtype=np.float32))
-        #     hdf5_file.create_dataset('patient_id_%s' % tt, data=np.asarray(patient_id_list[tt], dtype=np.uint8))
-        #     hdf5_file.create_dataset('cardiac_phase_%s' % tt, data=np.asarray(cardiac_phase_list[tt], dtype=np.uint8))
-        #
-        # hdf5_file.close()
+        for tt in ['test', 'train']:
+            hdf5_file.create_dataset('images_%s' % tt, data=np.asarray(img_list[tt], dtype=np.float32))
+            hdf5_file.create_dataset('masks_%s' % tt, data=np.asarray(mask_list[tt], dtype=np.uint8))
+            hdf5_file.create_dataset('diagnosis_%s' % tt, data=np.asarray(diag_list[tt], dtype=np.uint8))
+            hdf5_file.create_dataset('weight_%s' % tt, data=np.asarray(weight_list[tt], dtype=np.float32))
+            hdf5_file.create_dataset('height_%s' % tt, data=np.asarray(height_list[tt], dtype=np.float32))
+            hdf5_file.create_dataset('patient_id_%s' % tt, data=np.asarray(patient_id_list[tt], dtype=np.uint8))
+            hdf5_file.create_dataset('cardiac_phase_%s' % tt, data=np.asarray(cardiac_phase_list[tt], dtype=np.uint8))
+
+        hdf5_file.close()
 
 
 

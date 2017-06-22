@@ -41,8 +41,9 @@ def loss(logits, labels, weight_decay=0.00005, loss_type='weighted_crossentropy'
         segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
                                                                           class_weights=[0.1, 0.3, 0.3, 0.3])
     elif loss_type == 'crossentropy':
-        segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
-                                                                          class_weights=[0.25, 0.25, 0.25, 0.25])
+        # segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
+        #                                                                   class_weights=[0.25, 0.25, 0.25, 0.25])
+         segmentation_loss = losses.pixel_wise_cross_entropy_loss(logits, labels)
     elif loss_type == 'dice':
         segmentation_loss = losses.dice_loss(logits, labels)
     else:
@@ -55,11 +56,12 @@ def loss(logits, labels, weight_decay=0.00005, loss_type='weighted_crossentropy'
 
     return total_loss, segmentation_loss, weights_norm
 
+
 def predict(images, inference_handle):
 
     logits = inference_handle(images, training=tf.constant(False, dtype=tf.bool))
     softmax = tf.nn.softmax(logits)
-    mask = tf.arg_max(logits, dimension=3)
+    mask = tf.arg_max(softmax, dimension=-1)
 
     return mask, softmax
 
@@ -81,8 +83,10 @@ def training(loss, optimizer_handle, learning_rate, **kwargs):
 
 def evaluation(logits, labels, loss_type='weighted_crossentropy'):
 
-    mask = tf.arg_max(tf.nn.softmax(logits, dim=-1), dimension=3)
-    mask_gt = tf.arg_max(labels, dimension=3)
+    # ndims = logits.get_shape().ndims
+
+    mask = tf.arg_max(tf.nn.softmax(logits, dim=-1), dimension=-1)  # was 3
+    mask_gt = tf.arg_max(labels, dimension=-1)  # was 3
 
     tf.summary.image('example_segm', get_segmentation_summary(mask))
     tf.summary.image('example_gt', get_segmentation_summary(mask_gt))
@@ -102,7 +106,13 @@ def get_image_summary(img, idx=0):
     Make an image summary for 4d tensor image with index idx
     """
 
-    V = tf.slice(img, (0, 0, 0, idx), (1, -1, -1, 1))
+    # TODO: I think this is obsolete
+
+    if img.get_shape().ndims == 4:
+        V = tf.cast(tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 11)), tf.uint8)
+    else:
+        V = tf.cast(tf.slice(img, (idx, 0, 0), (1, -1, -1)), tf.uint8)
+
     V -= tf.reduce_min(V)
     V /= tf.reduce_max(V)
     V *= 255
@@ -120,7 +130,11 @@ def get_segmentation_summary(img, idx=0):
     Make an image summary for a segmentation mask
     """
 
-    V = tf.cast(tf.slice(img, (idx, 0, 0), (1, -1, -1)), tf.uint8)
+    if img.get_shape().ndims == 4:
+        V = tf.cast(tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 11)), tf.uint8)
+    else:
+        V = tf.cast(tf.slice(img, (idx, 0, 0), (1, -1, -1)), tf.uint8)
+
     # V -= tf.reduce_min(V)
     V /= tf.reduce_max(V)
     V *= 255
