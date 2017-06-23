@@ -16,7 +16,7 @@
 #$ -l h_rt=06:00:00
 
 ## the maximum memory usage of this job, (below 4G does not make much sense)
-#$ -l h_vmem=25G
+#$ -l h_vmem=35G
 
 # Host and gpu settings
 #$ -l gpu

@@ -21,8 +21,11 @@ from config.system import *
 
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
+# from experiments import unet_bn as exp_config
+from experiments import unet_bn_smaller_batchsize as exp_config
 # from experiments import unet_bn_fixed_unw_xent as exp_config
-from experiments import unet_bn_fixed_dice as exp_config
+# from experiments import unet_bn_fixed as exp_config
+# from experiments import unet_bn_fixed_dice as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -182,6 +185,8 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
 
 
 def run_training(continue_run):
+
+    logging.info('EXPERIMENT NAME: %s' % exp_config.experiment_name)
 
     init_step = 0
     if continue_run:
