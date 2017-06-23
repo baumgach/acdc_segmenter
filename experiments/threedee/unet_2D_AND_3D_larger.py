@@ -1,12 +1,12 @@
 import models3d
 import tensorflow as tf
 
-experiment_name = 'unet_2D_AND_3D_small'
+experiment_name = 'unet_2D_AND_3D_larger'
 
 batch_size = 1
 learning_rate = 0.01
 data_file = 'allvars_288x288x24.hdf5'
-model_handle = models3d.unet_bn_2D3D_half #small  #half
+model_handle = models3d.unet_bn_2D3D_larger
 optimizer_handle = tf.train.AdamOptimizer
 input_dataset = 'images'
 input_channels = 1

@@ -25,9 +25,9 @@ from skimage import transform
 
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
-#from experiments.threedee import refine_residual_units as exp_config
-# from experiments.threedee import unet_2D_AND_3D_small as exp_config
-from experiments.threedee import unet_3d as exp_config
+# from experiments.threedee import refine_residual_units as exp_config
+from experiments.threedee import unet_2D_AND_3D_larger as exp_config
+# from experiments.threedee import unet_3d as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -171,14 +171,21 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
 
 def run_training(continue_run=False):
 
+    logging.info('EXPERIMENT NAME: %s' % exp_config.experiment_name)
+
     init_step = 0
     if continue_run:
         logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! Continuing previous run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        init_checkpoint_path = utils.get_latest_model_checkpoint_path(LOG_DIR, 'model.ckpt')
-        logging.info('Checkpoint path: %s' % init_checkpoint_path)
-        init_step = int(init_checkpoint_path.split('/')[-1].split('-')[-1]) + 1  # plus 1 b/c otherwise starts with eval
-        logging.info('Latest step was: %d' % init_step)
-        logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        try: 
+            init_checkpoint_path = utils.get_latest_model_checkpoint_path(LOG_DIR, 'model.ckpt')
+            logging.info('Checkpoint path: %s' % init_checkpoint_path)
+            init_step = int(init_checkpoint_path.split('/')[-1].split('-')[-1]) + 1  # plus 1 b/c otherwise starts with eval
+            logging.info('Latest step was: %d' % init_step)
+            logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        except:
+            logging.warning('!!! Didnt find init checkpoint. Maybe first run failed. Disabling continue mode...')
+            continue_run = False
+            init_step = 0
 
     data = h5py.File(os.path.join(PROJECT_ROOT, exp_config.data_file), 'r')
 

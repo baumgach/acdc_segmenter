@@ -1,16 +1,13 @@
-import models3d
+import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_2D_AND_3D_small'
+experiment_name = 'unet_bn_rerun_smaller_batchsize'
 
-batch_size = 1
+batch_size = 6
 learning_rate = 0.01
-data_file = 'allvars_288x288x24.hdf5'
-model_handle = models3d.unet_bn_2D3D_half #small  #half
+data_file = 'newdata_288x288.hdf5'  # 'newdata_288x288.hdf5'
+model_handle = model_zoo.unet_bn
 optimizer_handle = tf.train.AdamOptimizer
-input_dataset = 'images'
-input_channels = 1
-down_sampling_factor = 1  # 1 means no down samplign, 2 means half the size (must be int)
 
 schedule_lr = False
 warmup_training = True
