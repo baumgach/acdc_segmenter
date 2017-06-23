@@ -15,6 +15,7 @@ import tensorflow as tf
 
 import model_zoo
 import time
+from importlib.machinery import SourceFileLoader
 
 # import matplotlib.pyplot as plt
 
@@ -81,10 +82,10 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                     for file in glob.glob(os.path.join(folder_path, 'patient???_frame??.nii.gz')):
 
                         print(' ----- Doing image: -------------------------')
+                        logging.info('Doing: %s' % file)
                         print(file)
                         print(' --------------------------------------------')
 
-                        logging.info('Doing: %s' % file)
 
                         file_img = file
                         file_base = file.split('.nii.gz')[0]
@@ -303,14 +304,29 @@ if __name__ == '__main__':
     # model_path = os.path.join(base_path, 'unet_bn_rerun')
     # model_path = os.path.join(base_path, 'unet_dilated_bn')
     # model_path = os.path.join(base_path, 'unet_bn_RV_more_weight')
-    model_path = os.path.join(base_path, 'unet_bn_merged_wenjia_new')
+    # model_path = os.path.join(base_path, 'unet_bn_merged_wenjia_new')
+    # model_path = os.path.join(base_path, 'unet_bn_fixed')
+    # model_path = os.path.join(base_path, 'unet_bn_fixed_dice')
+    # model_path = os.path.join(base_path, 'unet_bn_fixed_undw_xent')
 
     # inference_handle = model_zoo.lisa_net_deeper
     # inference_handle = model_zoo.lisa_net_deeper_bn
     # inference_handle = model_zoo.dilation_after_max_pool
-    inference_handle = model_zoo.unet_bn
+    # inference_handle = model_zoo.unet_bn_fixed
+    # inference_handle = model_zoo.unet_bn
     # inference_handle = model_zoo.unet_dilated_bn
     # inference_handle = model_zoo.VGG16_FCN_8_bn
+
+
+    EXP_NAME = 'unet_bn_rerun'
+
+    model_path = os.path.join(base_path, EXP_NAME)
+    config_file = glob.glob(model_path + '/*py')[0]
+    config_module = config_file.split('/')[-1].rstrip('.py')
+
+    exp_configs = SourceFileLoader(config_module, os.path.join(config_file)).load_module()
+
+    inference_handle = exp_configs.model_handle
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
