@@ -293,7 +293,8 @@ def mat_to_df(metrics_out, phase, measure_names):
 #
 def clinical_measures(df):
 
-    #todo: calculate the following clinical measures per patient:
+    import scipy.stats as stats
+
     # LV EF corr / bias / loa
     # LV Vol ED corr / bias / loa
     # LV Vol ES corr / bias / loa
@@ -305,41 +306,43 @@ def clinical_measures(df):
     # Myo Mass ED corr
     # Myo Vol ES corr
 
-    lv = df.loc[df['struc'] == 'LV']
+    print('--------------------------------------------')
+    print('the following measures should be the same as online')
 
-    ED_vol = np.array(lv.loc[lv['phase'] == 'ED']['vol'])
-    ES_vol = np.array(lv.loc[(lv['phase'] == 'ES')]['vol'])
-    EF_pred = (ED_vol - ES_vol) / ED_vol
+    for struc_name in ['LV', 'RV']:
 
-    ED_vol_gt = np.array(lv.loc[lv['phase'] == 'ED']['vol']) - np.array(lv.loc[lv['phase'] == 'ED']['vol_err'])
-    ES_vol_gt = np.array(lv.loc[(lv['phase'] == 'ES')]['vol']) - np.array(lv.loc[(lv['phase'] == 'ES')]['vol_err'])
+        lv = df.loc[df['struc'] == struc_name]
 
-    EF_gt = (ED_vol_gt - ES_vol_gt) / ED_vol_gt
+        ED_vol = np.array(lv.loc[lv['phase'] == 'ED']['vol'])
+        ES_vol = np.array(lv.loc[(lv['phase'] == 'ES')]['vol'])
+        EF_pred = (ED_vol - ES_vol) / ED_vol
 
-    LV_EF_corr = np.corrcoef(EF_pred, EF_gt)
+        ED_vol_gt = np.array(lv.loc[lv['phase'] == 'ED']['vol']) - np.array(lv.loc[lv['phase'] == 'ED']['vol_err'])
+        ES_vol_gt = np.array(lv.loc[(lv['phase'] == 'ES')]['vol']) - np.array(lv.loc[(lv['phase'] == 'ES')]['vol_err'])
 
-    lv = df.loc[df['struc'] == 'RV']
+        EF_gt = (ED_vol_gt - ES_vol_gt) / ED_vol_gt
 
-    ED_vol = np.array(lv.loc[lv['phase'] == 'ED']['vol'])
-    ES_vol = np.array(lv.loc[(lv['phase'] == 'ES')]['vol'])
-    EF_pred = (ED_vol - ES_vol) / ED_vol
+        LV_EF_corr  = stats.pearsonr(EF_pred, EF_gt)
+        print('{}, EF corr: {}'.format(struc_name, LV_EF_corr[0]))
 
-    ED_vol_gt = np.array(lv.loc[lv['phase'] == 'ED']['vol']) - np.array(lv.loc[lv['phase'] == 'ED']['vol_err'])
-    ES_vol_gt = np.array(lv.loc[(lv['phase'] == 'ES')]['vol']) - np.array(lv.loc[(lv['phase'] == 'ES')]['vol_err'])
-
-    EF_gt = (ED_vol_gt - ES_vol_gt) / ED_vol_gt
-
-    RV_EF_corr = np.corrcoef(EF_pred, EF_gt)
+    print('--------------------------------------------')
 
 
-
-def boxplot_metrics(dir_gt, dir_pred, eval_dir):
+def get_measures(dir_gt, dir_pred, eval_dir):
 
     import matplotlib.pyplot as plt
     import seaborn as sns
 
     metrics_out, phase, measure_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
     df = mat_to_df(metrics_out, phase, measure_names)
+
+    clinical_measures(df)
+    boxplot_metrics(df, eval_dir)
+
+def boxplot_metrics(df, eval_dir):
+
+    import matplotlib.pyplot as plt
+    import seaborn as sns
 
     dice_file = os.path.join(eval_dir, 'boxplot_dice.eps')
     hd_file = os.path.join(eval_dir, 'boxplot_hd.eps')
@@ -395,7 +398,8 @@ def main(path_gt, path_pred, eval_dir):
 
     if os.path.isdir(path_gt) and os.path.isdir(path_pred):
 
-        boxplot_metrics(path_gt, path_pred, eval_dir)
+        get_measures(path_gt, path_pred, eval_dir)
+        # boxplot_metrics(path_gt, path_pred, eval_dir)
 
         [dice1, dice2, dice3, vold1, vold2, vold3] = compute_metrics_on_directories(path_gt, path_pred)
 
