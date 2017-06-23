@@ -81,11 +81,9 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                     for file in glob.glob(os.path.join(folder_path, 'patient???_frame??.nii.gz')):
 
-                        print(' ----- Doing image: -------------------------')
+                        logging.info(' ----- Doing image: -------------------------')
                         logging.info('Doing: %s' % file)
-                        print(file)
-                        print(' --------------------------------------------')
-
+                        logging.info(' --------------------------------------------')
 
                         file_img = file
                         file_base = file.split('.nii.gz')[0]
@@ -318,7 +316,8 @@ if __name__ == '__main__':
     # inference_handle = model_zoo.VGG16_FCN_8_bn
 
 
-    EXP_NAME = 'unet_bn_rerun'
+    # EXP_NAME = 'unet_bn_rerun'
+    EXP_NAME = 'unet_bn_fixed_dice'
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
