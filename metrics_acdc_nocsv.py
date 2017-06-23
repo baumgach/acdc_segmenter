@@ -378,6 +378,7 @@ def boxplot_metrics(dir_gt, dir_pred, eval_dir):
             dat = df.loc[(df['phase'] == cardiac_phase) & (df['struc'] == struc_name)]
             print('{} {}, mean Dice: {}'.format(cardiac_phase, struc_name, np.mean(dat['dice'])))
             print('{} {}, mean Hausdorff: {}'.format(cardiac_phase, struc_name, np.mean(dat['hd'])))
+            print('{} {}, mean ASSD: {}'.format(cardiac_phase, struc_name, np.mean(dat['assd'])))
 
     print('--------------------------------------------')
 
