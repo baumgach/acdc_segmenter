@@ -26,8 +26,8 @@ from config.system import *
 # from experiments import unet_bn_fixed_unw_xent as exp_config
 # from experiments import unet_bn_fixed as exp_config
 # from experiments import unet_bn_fixed_dice as exp_config
-from experiments import unet_bn_bottleneck16 as exp_config
-# from experiments import unet_bn_fixed_xent_and_dice as exp_config
+# from experiments import unet_bn_bottleneck16 as exp_config
+from experiments import unet_bn_fixed_xent_and_dice as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')

@@ -12,6 +12,8 @@ import cv2
 
 import utils
 
+IMAGE_SIZE = [224, 224]
+
 def augmentation_function(images, labels):
 
     # TODO: Create kwargs with augmentation options
@@ -53,18 +55,19 @@ def augmentation_function(images, labels):
 
 def placeholder_inputs(batch_size):
 
-    images_placeholder = tf.placeholder(tf.float32, shape=(batch_size,288, 288, 1), name='images')
-    labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size,288, 288, 1), name='labels')
+    images_placeholder = tf.placeholder(tf.float32, shape=(batch_size, IMAGE_SIZE[0], IMAGE_SIZE[1], 1), name='images')
+    labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size,IMAGE_SIZE[0], IMAGE_SIZE[1], 1), name='labels')
     return images_placeholder, labels_placeholder
 
-data = h5py.File('newdata_288x288.hdf5', 'r')
+# data = h5py.File('newdata_288x288.hdf5', 'r')
+data = h5py.File('newdata_224x224.hdf5', 'r')
 # images_val = data['images_test'][:]
 # labels_val = data['masks_test'][:]
 images_val = data['images_test'][:]
 labels_val = data['masks_test'][:]
 
 
-images_val = np.reshape(images_val, (images_val.shape[0], 288, 288, 1))
+images_val = np.reshape(images_val, (images_val.shape[0], IMAGE_SIZE[0], IMAGE_SIZE[1], 1))
 
 
 images_placeholder, labels_placeholder = placeholder_inputs(1)
@@ -101,8 +104,8 @@ with tf.Session() as sess:
 
         y = labels_val[ind,...]
 
-        # y_tensor = np.reshape(y, [1, 288, 288, 1])
-        y_tensor = np.tile(np.reshape(y, [288, 288, 1]), (1,1))
+        # y_tensor = np.reshape(y, [1, IMAGE_SIZE[0], IMAGE_SIZE[1], 1])
+        y_tensor = np.tile(np.reshape(y, [IMAGE_SIZE[0], IMAGE_SIZE[1], 1]), (1,1))
 
         # x, y_tensor = augmentation_function(x, y_tensor)
 
@@ -130,18 +133,18 @@ with tf.Session() as sess:
         logits_crf = np.squeeze(logits_out)
         logits_crf = np.transpose(logits_crf, (2, 0, 1))
 
-        d = dcrf.DenseCRF2D(288, 288, 4)  # width, height, nlabels
+        d = dcrf.DenseCRF2D(IMAGE_SIZE[0], IMAGE_SIZE[1], 4)  # width, height, nlabels
         U = unary_from_softmax(logits_crf)
         U = U.reshape((4, -1))
         d.setUnaryEnergy(U)
         d.addPairwiseGaussian(sxy=3, compat=3)
-        d.addPairwiseBilateral()
+        # d.addPairwiseBilateral()
 
         Q = d.inference(50)
 
         # Find out the most probable class for each pixel.
         MAP = np.argmax(Q, axis=0)
-        MAP = np.reshape(MAP, [288, 288])
+        MAP = np.reshape(MAP, [IMAGE_SIZE[0], IMAGE_SIZE[1]])
 
         fig = plt.figure()
         ax1 = fig.add_subplot(241)

@@ -145,7 +145,7 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                             # plt.show()
 
                             prediction_cropped = np.squeeze(mask_out[0,...])
-                            prediction_cropped = post_process_prediction(prediction_cropped)
+                            #prediction_cropped = post_process_prediction(prediction_cropped)
 
 
 
@@ -279,45 +279,15 @@ def post_process_prediction(img):
 if __name__ == '__main__':
 
     base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
-    # model_path = './good_models/lisa_net_deeper_adam_reg0.00005_lr0.001_long'  # 0.777998
-    # model_path = './good_models/lisa_net_deeper_adam_autosched2' # 0.800817
-    # model_path = './good_models/lisa_net_deeper_adam_reg0.00005_lr0.001_augm3' # 0.765803
-    # model_path = './good_models/dilation_after_maxpool__reg0.00005' # 0.764761
-    # model_path = './good_models/lisa_net_deeper_wd_new_0.00000' # 0.822012
-    # model_path = './acdc_logdir/lisa_net_deeper_sgd_sched_reg0.00005_lr0.1_aug_bn2'  # 0.740749 (early stop)
-    # model_path = './good_models/lisa_net_deeper_autosched_mom_reg0.00005_lr0.1_bn'  # 0.813045
-    # model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug' #  0.800794 -- base model for refinements below
-    # model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.0001_aug_refdice' # 0.799363  --> refinement made it slighly worse...
-    # model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.001_aug_refunweighted'  # 0.809884 --> this refinement made it almost 1% better
-    # model_path = './acdc_logdir/lisa_net_deeper_adam_sched_reg0.00005_lr0.0001_aug_refunweighted'  # 0.808602 --> this refinement also improved it a bit
-    # model_path = './acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00005_lr0.1_aug_newbn' # 0.812817
-    # model_path = './acdc_logdir/lisa_net_deeper_mom0.9_sched_reg0.00000_lr0.1_aug_newbn' #0.812500
-    # model_path = './acdc_logdir/lisa_net_deeper_adam_nosched_reg0.00000_lr0.01_aug_newbn' # 0.825071, 0.833786
-    # model_path = os.path.join(base_path, 'unet_gbn_adam_reg0.00000_lr0.01_aug')
-    #model_path = os.path.join(base_path, 'VGG16_FCN_8_gbn_adam_reg0.00000_lr0.01_aug')
-    #model_path = os.path.join(base_path, 'unet_bn_long')
-    # model_path = os.path.join(base_path, 'unet_bn_lisadata')
-    # model_path = os.path.join(base_path, 'unet_bn_fliplr')
-    # model_path = os.path.join(base_path, 'unet_bn_rotate')
-    # model_path = os.path.join(base_path, 'unet_bn_rerun')
-    # model_path = os.path.join(base_path, 'unet_dilated_bn')
-    # model_path = os.path.join(base_path, 'unet_bn_RV_more_weight')
-    # model_path = os.path.join(base_path, 'unet_bn_merged_wenjia_new')
-    # model_path = os.path.join(base_path, 'unet_bn_fixed')
-    # model_path = os.path.join(base_path, 'unet_bn_fixed_dice')
-    # model_path = os.path.join(base_path, 'unet_bn_fixed_undw_xent')
 
-    # inference_handle = model_zoo.lisa_net_deeper
-    # inference_handle = model_zoo.lisa_net_deeper_bn
-    # inference_handle = model_zoo.dilation_after_max_pool
-    # inference_handle = model_zoo.unet_bn_fixed
-    # inference_handle = model_zoo.unet_bn
-    # inference_handle = model_zoo.unet_dilated_bn
-    # inference_handle = model_zoo.VGG16_FCN_8_bn
-
-
-    # EXP_NAME = 'unet_bn_rerun'
-    EXP_NAME = 'unet_bn_fixed_dice'
+    # EXP_NAME = 'unet_bn_rerun'  # 0.89623 @ 14499
+    # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # 0.893037
+    # EXP_NAME = 'unet_bn_bottleneck16' # 0.890652
+    # EXP_NAME = 'unet_bn_fixed_xent_and_dice'  #0.876541
+    
+    # EXP_NAME = 'unet_bn_fixed_undw_xent' # 0.885276  -- finished  @ 17299
+    # EXP_NAME = 'unet_bn_fixed' # 0.891060 @ 18199,
+    EXP_NAME = 'unet_bn_fixed_dice' #  0.867664  w/o pp 0.865265, 0.877424 @ 17799
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
@@ -329,6 +299,7 @@ if __name__ == '__main__':
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
+    eval_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/tmp_eval'
 
     path_pred = os.path.join(output_path, 'prediction')
     path_gt = os.path.join(output_path, 'ground_truth')
