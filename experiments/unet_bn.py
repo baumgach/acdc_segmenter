@@ -6,6 +6,7 @@ experiment_name = 'unet_bn_rerun'
 batch_size = 10
 learning_rate = 0.01
 data_file = 'newdata_288x288.hdf5'  # 'newdata_288x288.hdf5'
+image_size = (288, 288)
 model_handle = model_zoo.unet_bn
 optimizer_handle = tf.train.AdamOptimizer
 
@@ -23,3 +24,5 @@ do_fliplr = False
 
 # Rarely used settings
 use_data_fraction = False  # Should normally be False
+
+

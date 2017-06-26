@@ -23,7 +23,10 @@ def inference(images, inference_handle, training=True):
     return inference_handle(images, training)
 
 
-def loss(logits, labels, weight_decay=0.00005, loss_type='weighted_crossentropy'):
+def loss(logits, labels, weight_decay=0.00005, loss_type='weighted_crossentropy', convert_to_onehot=False):
+
+    if convert_to_onehot:
+        labels = tf.one_hot(labels, depth=4)
 
     with tf.variable_scope('weights_norm') as scope:
 
@@ -83,9 +86,12 @@ def training(loss, optimizer_handle, learning_rate, **kwargs):
     return train_op
 
 
-def evaluation(logits, labels, loss_type='weighted_crossentropy'):
+def evaluation(logits, labels, loss_type='weighted_crossentropy', convert_to_onehot=False):
 
     # ndims = logits.get_shape().ndims
+
+    if convert_to_onehot:
+        labels = tf.one_hot(labels, depth=4)
 
     mask = tf.arg_max(tf.nn.softmax(logits, dim=-1), dimension=-1)  # was 3
     mask_gt = tf.arg_max(labels, dimension=-1)  # was 3

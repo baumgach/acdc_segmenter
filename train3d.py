@@ -26,8 +26,9 @@ from skimage import transform
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
 # from experiments.threedee import refine_residual_units as exp_config
-from experiments.threedee import unet_2D_AND_3D_larger as exp_config
+# from experiments.threedee import unet_2D_AND_3D_larger as exp_config
 # from experiments.threedee import unet_3d as exp_config
+from experiments.threedee import unet_3d_224x224 as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -35,6 +36,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
 DOWNSAMPLING_FACTOR = exp_config.down_sampling_factor
 INPUT_CHANNELS = int(exp_config.input_channels)
+IMAGE_SIZE = exp_config.image_size
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()
@@ -45,12 +47,26 @@ if not hostname == local_hostname:
     logging.info('SGE_GPU is %s' % os.environ['SGE_GPU'])
 
 
-def placeholder_inputs(batch_size):
+def placeholder_inputs(batch_size, labels_as_onehot=False):
 
     images_placeholder = tf.placeholder(tf.float32,
                                         shape=(batch_size, IMAGE_SIZE[0]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[1]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[2], INPUT_CHANNELS), name='images')
-    labels_placeholder = tf.placeholder(tf.float32,
-                                        shape=(batch_size, IMAGE_SIZE[0]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[1]/DOWNSAMPLING_FACTOR, IMAGE_SIZE[2], 4), name='labels')
+
+    if labels_as_onehot:
+        labels_placeholder = tf.placeholder(tf.float32,
+                                            shape=(batch_size,
+                                                   IMAGE_SIZE[0]/DOWNSAMPLING_FACTOR,
+                                                   IMAGE_SIZE[1]/DOWNSAMPLING_FACTOR,
+                                                   IMAGE_SIZE[2],
+                                                   4),
+                                            name='labels')
+    else:
+        labels_placeholder = tf.placeholder(tf.uint8,
+                                            shape=(batch_size,
+                                                   IMAGE_SIZE[0]/DOWNSAMPLING_FACTOR,
+                                                   IMAGE_SIZE[1]/DOWNSAMPLING_FACTOR,
+                                                   IMAGE_SIZE[2]),
+                                            name='labels')
     return images_placeholder, labels_placeholder
 
 
@@ -148,7 +164,7 @@ def iterate_minibatches(images, labels, batch_size=10, augment_batch=False):
         X = images[batch_indices, ...]
         y = labels[batch_indices, ...]
 
-        y = tf_utils.labels_to_one_hot(y)
+        #y = tf_utils.labels_to_one_hot(y)
 
         if not DOWNSAMPLING_FACTOR == 1:
             X, y = resize_batch(X, y, scale=[1.0/DOWNSAMPLING_FACTOR,1.0/DOWNSAMPLING_FACTOR, 1])
@@ -235,7 +251,8 @@ def run_training(continue_run=False):
         [loss, _, weights_norm] = model.loss(logits,
                                              labels_placeholder,
                                              weight_decay=exp_config.weight_decay,
-                                             loss_type=exp_config.loss_type)  # second output is unregularised loss
+                                             loss_type=exp_config.loss_type,
+                                             convert_to_onehot=True)  # second output is unregularised loss
 
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('weights_norm_term', weights_norm)
@@ -249,7 +266,8 @@ def run_training(continue_run=False):
         # Add the Op to compare the logits to the labels during evaluation.
         eval_loss = model.evaluation(logits,
                                      labels_placeholder,
-                                     loss_type=exp_config.loss_type)
+                                     loss_type=exp_config.loss_type,
+                                     convert_to_onehot=True)
 
         # Build the summary Tensor based on the TF collection of Summaries.
         summary = tf.summary.merge_all()

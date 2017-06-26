@@ -22,17 +22,19 @@ from config.system import *
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
 # from experiments import unet_bn as exp_config
+from experiments import unet_bn_224x224 as exp_config
 # from experiments import unet_bn_smaller_batchsize as exp_config
 # from experiments import unet_bn_fixed_unw_xent as exp_config
 # from experiments import unet_bn_fixed as exp_config
 # from experiments import unet_bn_fixed_dice as exp_config
 # from experiments import unet_bn_bottleneck16 as exp_config
-from experiments import unet_bn_fixed_xent_and_dice as exp_config
+# from experiments import unet_bn_fixed_xent_and_dice as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
 LOG_DIR = os.path.join(LOG_ROOT, exp_config.experiment_name)
+IMAGE_SIZE = exp_config.image_size
 
 # Find out if running locally or on grid engine. If GE then need to set cuda visible devices.
 hostname = socket.gethostname()
