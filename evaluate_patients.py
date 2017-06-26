@@ -31,11 +31,9 @@ def placeholder_inputs(batch_size, nx, ny):
     labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size, nx, ny, 1), name='labels')
     return images_placeholder, labels_placeholder
 
-def score_data(input_folder, output_folder, model_path, inference_handle):
+def score_data(input_folder, output_folder, model_path, inference_handle, image_size, target_resolution):
 
-    nx = 288
-    ny = 288
-
+    nx, ny = image_size
     batch_size = 1
 
     images_pl, labels_placeholder = placeholder_inputs(batch_size, nx, ny)
@@ -101,13 +99,15 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                         pixel_size = (img_dat[2].structarr['pixdim'][1], img_dat[2].structarr['pixdim'][2])
 
+                        scaling_factor = (pixel_size[0] / target_resolution[0], pixel_size[1] / target_resolution[1])
+
                         predictions = []
 
                         start_time = time.time()
                         for zz in range(img.shape[2]):
 
                             slice_img = np.squeeze(img[:,:,zz])
-                            slice_rescaled = image_utils.rescale_image(slice_img, pixel_size)
+                            slice_rescaled = image_utils.rescale_image(slice_img, scaling_factor)
 
                             x, y = slice_rescaled.shape
 
@@ -165,9 +165,9 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                                 if x <= nx and y > ny:
                                     slice_predictions[:, y_s:y_s+ny] = prediction_cropped[x_c:x_c+ x, :]
                                 elif x > nx and y <= ny:
-                                    slice_predictions[x_s:x_s + nx, :] = prediction_cropped[:, y_c:y_c + y, :]
+                                    slice_predictions[x_s:x_s + nx, :] = prediction_cropped[:, y_c:y_c + y]
                                 else:
-                                    slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y, :]
+                                    slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y]
 
                             prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
                             #prediction = image_utils.resize_labels_lisa_style(slice_predictions, (mask.shape[0], mask.shape[1]), num_labels=4)
@@ -287,7 +287,8 @@ if __name__ == '__main__':
     
     # EXP_NAME = 'unet_bn_fixed_undw_xent' # 0.885276  -- finished  @ 17299
     # EXP_NAME = 'unet_bn_fixed' # 0.891060 @ 18199,
-    EXP_NAME = 'unet_bn_fixed_dice' #  0.867664  w/o pp 0.865265, 0.877424 @ 17799
+    # EXP_NAME = 'unet_bn_fixed_dice' #  0.867664  w/o pp 0.865265, 0.877424 @ 17799
+    EXP_NAME = 'unet_bn_224_224'
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
@@ -296,6 +297,7 @@ if __name__ == '__main__':
     exp_configs = SourceFileLoader(config_module, os.path.join(config_file)).load_module()
 
     inference_handle = exp_configs.model_handle
+    image_size = exp_configs.image_size
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
@@ -311,7 +313,14 @@ if __name__ == '__main__':
     utils.makefolder(path_diff)
     utils.makefolder(path_image)
 
-    score_data(input_path, output_path, model_path, inference_handle)
+    if image_size[0] == 288:
+        target_resolution = (1.0, 1.0)
+    elif image_size[0] == 224:
+        target_resolution = (1.36719, 1.36719)
+    else:
+        raise ValueError('Unknown target resolution')
+
+    score_data(input_path, output_path, model_path, inference_handle, image_size=image_size, target_resolution=target_resolution)
 
     import metrics_acdc_nocsv
     [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)
