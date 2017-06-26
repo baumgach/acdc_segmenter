@@ -179,13 +179,13 @@ class DataMakerACDC:
 
 if __name__ == '__main__':
 
-    n_x = 224
-    n_y = 224
+    n_x = 212
+    n_y = 212
 
     base_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     # data_maker = DataMakerACDC('data_288x288.hdf5', base_path, n_x, n_y)
     # data_maker = DataMakerACDC('newdata_288x288.hdf5', base_path, n_x, n_y)
-    data_maker = DataMakerACDC('newdata_224x224.hdf5', base_path, n_x, n_y, target_resolution=(1.36719, 1.36719))
+    data_maker = DataMakerACDC('newdata_212x212.hdf5', base_path, n_x, n_y, target_resolution=(1.36719, 1.36719))
 
     data_maker.run()
 

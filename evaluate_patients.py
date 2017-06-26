@@ -24,6 +24,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
 
+from skimage import transform
+
 
 def placeholder_inputs(batch_size, nx, ny):
 
@@ -144,32 +146,51 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
                             # plt.imshow(np.squeeze(mask_out[0,...]))
                             # plt.show()
 
-                            prediction_cropped = np.squeeze(mask_out[0,...])
+                            # prediction_cropped = np.squeeze(mask_out[0,...])
+                            prediction_cropped = np.squeeze(logits_out[0,...])
                             #prediction_cropped = post_process_prediction(prediction_cropped)
 
 
 
                             # ASSEMBLE BACK THE SLICES
-                            slice_predictions = np.zeros((x,y))
+                            # slice_predictions = np.zeros((x,y))
+                            slice_predictions = np.zeros((x,y,4))
 
                             # Not really sure why this is necessary...
-                            x_s -= 1
-                            y_s -= 1
-                            x_c -= 1
-                            y_c -= 1
+                            # x_s -= 1
+                            # y_s -= 1
+                            # x_c -= 1
+                            # y_c -= 1
 
                             # insert cropped region into original image again
                             if x > nx and y > ny:
-                                slice_predictions[x_s:x_s+nx, y_s:y_s+ny] = prediction_cropped
+                                slice_predictions[x_s:x_s+nx, y_s:y_s+ny,:] = prediction_cropped
                             else:
                                 if x <= nx and y > ny:
-                                    slice_predictions[:, y_s:y_s+ny] = prediction_cropped[x_c:x_c+ x, :]
+                                    slice_predictions[:, y_s:y_s+ny,:] = prediction_cropped[x_c:x_c+ x, :,:]
                                 elif x > nx and y <= ny:
-                                    slice_predictions[x_s:x_s + nx, :] = prediction_cropped[:, y_c:y_c + y]
+                                    slice_predictions[x_s:x_s + nx, :,:] = prediction_cropped[:, y_c:y_c + y,:]
                                 else:
-                                    slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y]
+                                    slice_predictions[:, :,:] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y,:]
 
-                            prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
+                            # prediction = image_utils.rescale_image(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1]), interp=cv2.INTER_NEAREST)
+                            prediction = transform.rescale(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1], 1), order=1,
+                                              preserve_range=True, multichannel=False)
+
+                            prediction = np.uint8(np.argmax(prediction, axis=-1))
+
+                            if not prediction.shape == mask.shape[:2]:
+                                logging.warning('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111')
+                                logging.warning('Prediction shape is not mask.shape')
+                                logging.warning('Prediction shape')
+                                logging.warning(prediction.shape)
+                                logging.warning('Mask shape')
+                                logging.warning(mask.shape)
+
+                            #network_input = transform.rescale(network_input, (1, 1.0/ds_fact, 1.0/ds_fact, 1, 1), order=1, preserve_range=True, multichannel=False)
+
+
+                            # prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
                             #prediction = image_utils.resize_labels_lisa_style(slice_predictions, (mask.shape[0], mask.shape[1]), num_labels=4)
 
                             predictions.append(prediction)
@@ -280,7 +301,7 @@ if __name__ == '__main__':
 
     base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
 
-    # EXP_NAME = 'unet_bn_rerun'  # 0.89623 @ 14499
+    EXP_NAME = 'unet_bn_rerun'  # 0.89623 @ 14499
     # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # 0.893037
     # EXP_NAME = 'unet_bn_bottleneck16' # 0.890652
     # EXP_NAME = 'unet_bn_fixed_xent_and_dice'  #0.876541
@@ -288,7 +309,7 @@ if __name__ == '__main__':
     # EXP_NAME = 'unet_bn_fixed_undw_xent' # 0.885276  -- finished  @ 17299
     # EXP_NAME = 'unet_bn_fixed' # 0.891060 @ 18199,
     # EXP_NAME = 'unet_bn_fixed_dice' #  0.867664  w/o pp 0.865265, 0.877424 @ 17799
-    EXP_NAME = 'unet_bn_224_224'
+    # EXP_NAME = 'unet_bn_224_224'
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
