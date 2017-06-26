@@ -339,11 +339,15 @@ def get_measures(dir_gt, dir_pred, eval_dir):
 
 
 def print_table1(df, eval_dir):
+    """
+    prints mean (+- std) values for Dice and ASSD, all structures, averaged over both phases.
+
+    :param df:
+    :param eval_dir:
+    :return:
+    """
 
     out_file = os.path.join(eval_dir, 'table1.txt')
-
-    print('--------------------------------------------')
-    print('LATEX Table 1 (outputs one line)')
 
     line_string = 'METHOD '
 
@@ -359,12 +363,10 @@ def print_table1(df, eval_dir):
 
     line_string += ' \\\\'
 
-    print(line_string)
-
     with open(out_file, "w") as text_file:
         text_file.write(line_string)
 
-    print('--------------------------------------------')
+    return 0
 
 def boxplot_metrics(df, eval_dir):
 
