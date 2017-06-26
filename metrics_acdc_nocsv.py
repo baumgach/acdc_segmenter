@@ -335,6 +335,7 @@ def get_measures(dir_gt, dir_pred, eval_dir):
 
     # clinical_measures(df)
     print_table1(df, eval_dir)
+    print_table2(df, eval_dir)
     boxplot_metrics(df, eval_dir)
 
 
@@ -349,22 +350,77 @@ def print_table1(df, eval_dir):
 
     out_file = os.path.join(eval_dir, 'table1.txt')
 
+    header_string = ' & '
     line_string = 'METHOD '
 
-    for measure in ['dice', 'assd']:
-        for struc_name in ['LV', 'RV', 'Myo']:
+
+    for s_idx, struc_name in enumerate(['LV', 'RV', 'Myo']):
+        for measure in ['dice', 'assd']:
+
+            header_string += ' & {} ({}) '.format(measure, struc_name)
 
             dat = df.loc[df['struc'] == struc_name]
 
             if measure == 'dice':
-                line_string += ' & ${:.3f} \pm {:.3f}$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                line_string += ' & ${:.3f} ({:.3f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
             else:
-                line_string += ' & ${:.2f} \pm {:.2f}$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                line_string += ' & ${:.2f} ({:.2f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
 
-    line_string += ' \\\\'
+        if s_idx < 2:
+            header_string += ' & '
+            line_string += ' & '
+
+    header_string += ' \\\\ \n'
+    line_string += ' \\\\ \n'
 
     with open(out_file, "w") as text_file:
+        text_file.write(header_string)
         text_file.write(line_string)
+
+    return 0
+
+def print_table2(df, eval_dir):
+    """
+    prints mean (+- std) values for Dice, ASSD and HD, all structures, both phases separately
+
+    :param df:
+    :param eval_dir:
+    :return:
+    """
+
+    out_file = os.path.join(eval_dir, 'table2.txt')
+
+
+    with open(out_file, "w") as text_file:
+
+        for idx, struc_name in enumerate(['LV', 'RV', 'Myo']):
+            # new line
+            header_string = ' & '
+            line_string = '({}) '.format(struc_name)
+
+            for p_idx, phase in enumerate(['ED', 'ES']):
+                for measure in ['dice', 'assd', 'hd']:
+
+                    header_string += ' & {} ({}) '.format(phase, measure)
+
+                    dat = df.loc[(df['phase'] == phase) & (df['struc'] == struc_name)]
+
+                    if measure == 'dice':
+                        line_string += ' & ${:.3f} ({:.3f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                    else:
+                        line_string += ' & ${:.2f} ({:.2f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+
+                if p_idx == 0:
+                    header_string += ' & '
+                    line_string += ' & '
+
+            header_string += ' \\\\ \n'
+            line_string += ' \\\\ \n'
+
+            if idx == 0:
+                text_file.write(header_string)
+
+            text_file.write(line_string)
 
     return 0
 
