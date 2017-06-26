@@ -330,14 +330,41 @@ def clinical_measures(df):
 
 def get_measures(dir_gt, dir_pred, eval_dir):
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-
     metrics_out, phase, measure_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
     df = mat_to_df(metrics_out, phase, measure_names)
 
-    clinical_measures(df)
+    # clinical_measures(df)
+    print_table1(df, eval_dir)
     boxplot_metrics(df, eval_dir)
+
+
+def print_table1(df, eval_dir):
+
+    out_file = os.path.join(eval_dir, 'table1.txt')
+
+    print('--------------------------------------------')
+    print('LATEX Table 1 (outputs one line)')
+
+    line_string = 'METHOD '
+
+    for measure in ['dice', 'assd']:
+        for struc_name in ['LV', 'RV', 'Myo']:
+
+            dat = df.loc[df['struc'] == struc_name]
+
+            if measure == 'dice':
+                line_string += ' & ${:.3f} \pm {:.3f}$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+            else:
+                line_string += ' & ${:.2f} \pm {:.2f}$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+
+    line_string += ' \\\\'
+
+    print(line_string)
+
+    with open(out_file, "w") as text_file:
+        text_file.write(line_string)
+
+    print('--------------------------------------------')
 
 def boxplot_metrics(df, eval_dir):
 
@@ -380,9 +407,9 @@ def boxplot_metrics(df, eval_dir):
         for cardiac_phase in ['ED', 'ES']:
             dat = df.loc[(df['phase'] == cardiac_phase) & (df['struc'] == struc_name)]
 
-            print('{} {}, mean Dice: {}'.format(cardiac_phase, struc_name, np.mean(dat['dice'])))
-            print('{} {}, mean Hausdorff: {}'.format(cardiac_phase, struc_name, np.mean(dat['hd'])))
-            print('{} {}, mean ASSD: {}'.format(cardiac_phase, struc_name, np.mean(dat['assd'])))
+            print('{} {}, mean += std Dice: {:.3f} ({:.3f})'.format(cardiac_phase, struc_name, np.mean(dat['dice']), np.std(dat['dice'])))
+            print('{} {}, mean Hausdorff: {:.2f} ({:.2f})'.format(cardiac_phase, struc_name, np.mean(dat['hd']), np.std(dat['hd'])))
+            print('{} {}, mean ASSD: {:.2f} ({:.2f})'.format(cardiac_phase, struc_name, np.mean(dat['assd']), np.std(dat['assd'])))
 
     print('--------------------------------------------')
 
