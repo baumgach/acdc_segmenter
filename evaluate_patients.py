@@ -3,6 +3,7 @@ import image_utils
 
 import os
 import glob
+import socket
 
 # import matplotlib.pyplot as plt
 
@@ -24,6 +25,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
 
+from skimage import transform
+from config.system import *
+
+hostname = socket.gethostname()
+print('Running on %s' % hostname)
+if not hostname == local_hostname:
+    logging.info('Setting CUDA_VISIBLE_DEVICES variable...')
+    os.environ["CUDA_VISIBLE_DEVICES"] = os.environ['SGE_GPU']
+    logging.info('SGE_GPU is %s' % os.environ['SGE_GPU'])
 
 def placeholder_inputs(batch_size, nx, ny):
 
@@ -31,11 +41,9 @@ def placeholder_inputs(batch_size, nx, ny):
     labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size, nx, ny, 1), name='labels')
     return images_placeholder, labels_placeholder
 
-def score_data(input_folder, output_folder, model_path, inference_handle):
+def score_data(input_folder, output_folder, model_path, inference_handle, image_size, target_resolution):
 
-    nx = 288
-    ny = 288
-
+    nx, ny = image_size
     batch_size = 1
 
     images_pl, labels_placeholder = placeholder_inputs(batch_size, nx, ny)
@@ -54,8 +62,11 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
         # saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
 
         # automatically find latest best file
-        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+        # checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_xent.ckpt')
         saver.restore(sess, checkpoint_path)
+
+        init_iteration = int(checkpoint_path.split('/')[-1].split('-')[-1])
 
         total_time = 0
         total_volumes = 0
@@ -101,13 +112,15 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
                         pixel_size = (img_dat[2].structarr['pixdim'][1], img_dat[2].structarr['pixdim'][2])
 
+                        scaling_factor = (pixel_size[0] / target_resolution[0], pixel_size[1] / target_resolution[1])
+
                         predictions = []
 
                         start_time = time.time()
                         for zz in range(img.shape[2]):
 
                             slice_img = np.squeeze(img[:,:,zz])
-                            slice_rescaled = image_utils.rescale_image(slice_img, pixel_size)
+                            slice_rescaled = image_utils.rescale_image(slice_img, scaling_factor)
 
                             x, y = slice_rescaled.shape
 
@@ -144,32 +157,51 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
                             # plt.imshow(np.squeeze(mask_out[0,...]))
                             # plt.show()
 
-                            prediction_cropped = np.squeeze(mask_out[0,...])
+                            # prediction_cropped = np.squeeze(mask_out[0,...])
+                            prediction_cropped = np.squeeze(logits_out[0,...])
                             #prediction_cropped = post_process_prediction(prediction_cropped)
 
 
 
                             # ASSEMBLE BACK THE SLICES
-                            slice_predictions = np.zeros((x,y))
+                            # slice_predictions = np.zeros((x,y))
+                            slice_predictions = np.zeros((x,y,4))
 
                             # Not really sure why this is necessary...
-                            x_s -= 1
-                            y_s -= 1
-                            x_c -= 1
-                            y_c -= 1
+                            # x_s -= 1
+                            # y_s -= 1
+                            # x_c -= 1
+                            # y_c -= 1
 
                             # insert cropped region into original image again
                             if x > nx and y > ny:
-                                slice_predictions[x_s:x_s+nx, y_s:y_s+ny] = prediction_cropped
+                                slice_predictions[x_s:x_s+nx, y_s:y_s+ny,:] = prediction_cropped
                             else:
                                 if x <= nx and y > ny:
-                                    slice_predictions[:, y_s:y_s+ny] = prediction_cropped[x_c:x_c+ x, :]
+                                    slice_predictions[:, y_s:y_s+ny,:] = prediction_cropped[x_c:x_c+ x, :,:]
                                 elif x > nx and y <= ny:
-                                    slice_predictions[x_s:x_s + nx, :] = prediction_cropped[:, y_c:y_c + y, :]
+                                    slice_predictions[x_s:x_s + nx, :,:] = prediction_cropped[:, y_c:y_c + y,:]
                                 else:
-                                    slice_predictions[:, :] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y, :]
+                                    slice_predictions[:, :,:] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y,:]
 
-                            prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
+                            # prediction = image_utils.rescale_image(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1]), interp=cv2.INTER_NEAREST)
+                            prediction = transform.rescale(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1], 1), order=1,
+                                              preserve_range=True, multichannel=False)
+
+                            prediction = np.uint8(np.argmax(prediction, axis=-1))
+
+                            if not prediction.shape == mask.shape[:2]:
+                                logging.warning('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111')
+                                logging.warning('Prediction shape is not mask.shape')
+                                logging.warning('Prediction shape')
+                                logging.warning(prediction.shape)
+                                logging.warning('Mask shape')
+                                logging.warning(mask.shape)
+
+                            #network_input = transform.rescale(network_input, (1, 1.0/ds_fact, 1.0/ds_fact, 1, 1), order=1, preserve_range=True, multichannel=False)
+
+
+                            # prediction = image_utils.resize_image(slice_predictions, (mask.shape[0], mask.shape[1]), interp=cv2.INTER_NEAREST)
                             #prediction = image_utils.resize_labels_lisa_style(slice_predictions, (mask.shape[0], mask.shape[1]), num_labels=4)
 
                             predictions.append(prediction)
@@ -226,6 +258,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle):
 
         print('Average time per volume: %f' % (total_time/total_volumes))
 
+    return init_iteration
+
 
 # def get_prediction_for_image(img, sess, images_placeholder, mask, softmax, model_path, inference_handle):
 #
@@ -279,15 +313,24 @@ def post_process_prediction(img):
 if __name__ == '__main__':
 
     base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
+    # base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/model_backups/'
 
-    # EXP_NAME = 'unet_bn_rerun'  # 0.89623 @ 14499
-    # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # 0.893037
-    # EXP_NAME = 'unet_bn_bottleneck16' # 0.890652
-    # EXP_NAME = 'unet_bn_fixed_xent_and_dice'  #0.876541
-    
-    # EXP_NAME = 'unet_bn_fixed_undw_xent' # 0.885276  -- finished  @ 17299
-    # EXP_NAME = 'unet_bn_fixed' # 0.891060 @ 18199,
-    EXP_NAME = 'unet_bn_fixed_dice' #  0.867664  w/o pp 0.865265, 0.877424 @ 17799
+    # EXP_NAME = 'unet_bn_rerun_best'  # N 0.908085 @ 8799
+
+    # EXP_NAME = 'unet_bn_rerun'  # N 0.907006 @ 19699
+    # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # N 0.903069 @ 8199
+    # EXP_NAME = 'unet_bn_bottleneck16' # N 0.901233 @ 3699
+
+    # EXP_NAME = 'unet_bn_fixed_xent_and_dice'  # N 0.903237 @ 11699
+    # EXP_NAME = 'unet_bn_fixed_undw_xent' # N 0.897012 @ 17299
+    # EXP_NAME = 'unet_bn_fixed' # N 0.901278 @ 18199,
+    # EXP_NAME = 'unet_bn_fixed_dice' # N 0.888020 @ 17799
+
+
+    # EXP_NAME = 'unet_bn_224_224' # N 0.899504 @ 6099
+
+    EXP_NAME = 'unet_bn_212x212_hack' # 0.900920 @ 13499
+    # EXP_NAME = 'unet_bn_212x212'  # 0.896995 @ 13899
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
@@ -296,6 +339,7 @@ if __name__ == '__main__':
     exp_configs = SourceFileLoader(config_module, os.path.join(config_file)).load_module()
 
     inference_handle = exp_configs.model_handle
+    image_size = exp_configs.image_size
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/prediction_data/'
@@ -311,18 +355,29 @@ if __name__ == '__main__':
     utils.makefolder(path_diff)
     utils.makefolder(path_image)
 
-    score_data(input_path, output_path, model_path, inference_handle)
+    if image_size[0] == 288:
+        target_resolution = (1.0, 1.0)
+    elif image_size[0] == 224:
+        target_resolution = (1.36719, 1.36719)
+    elif image_size[0] == 212:
+        target_resolution = (1.36719, 1.36719)
+    else:
+        raise ValueError('Unknown target resolution')
+
+    init_iteration = score_data(input_path, output_path, model_path, inference_handle, image_size=image_size, target_resolution=target_resolution)
 
     import metrics_acdc_nocsv
     [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)
 
+    print('Model: %s' % model_path)
+    print('Used init iteration: %d' % init_iteration)
     print('Dice 1: %f' % dice1)
     print('Dice 2: %f' % dice2)
     print('Dice 3: %f' % dice3)
     print('Mean dice: %f' % np.mean([dice1, dice2, dice3]))
 
     logging.info('Model: %s' % model_path)
-
+    logging.info('Used init iteration: %d' % init_iteration)
     logging.info('Dice 1: %f' % dice1)
     logging.info('Dice 2: %f' % dice2)
     logging.info('Dice 3: %f' % dice3)

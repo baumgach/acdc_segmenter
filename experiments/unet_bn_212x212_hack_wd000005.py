@@ -1,20 +1,20 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_fixed_xent_and_dice'
+experiment_name = 'unet_bn_212x212_hack_wd0.000005'
 
-batch_size = 6
+batch_size = 10
 learning_rate = 0.01
-data_file = 'newdata_288x288.hdf5'  # 'newdata_288x288.hdf5'
-image_size = (288, 288)
-model_handle = model_zoo.unet_bn_fixed
+data_file = 'betterinterp_212x212.hdf5'  # 'newdata_288x288.hdf5'
+image_size = (212, 212)
+model_handle = model_zoo.unet_bn_padded_hack
 optimizer_handle = tf.train.AdamOptimizer
 
 schedule_lr = False
 warmup_training = True
-weight_decay = 0.00000
+weight_decay = 0.000005
 momentum = None
-loss_type = 'crossentropy_and_dice'  # crossentropy/weighted_crossentropy/dice
+loss_type = 'weighted_crossentropy'  # crossentropy/weighted_crossentropy/dice
 
 # Augmentation settings
 augment_batch = False
@@ -24,3 +24,5 @@ do_fliplr = False
 
 # Rarely used settings
 use_data_fraction = False  # Should normally be False
+
+

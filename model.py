@@ -117,7 +117,7 @@ def get_image_summary(img, idx=0):
     # TODO: I think this is obsolete
 
     if img.get_shape().ndims == 4:
-        V = tf.cast(tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 11)), tf.uint8)
+        V = tf.cast(tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 1)), tf.uint8)
     else:
         V = tf.cast(tf.slice(img, (idx, 0, 0), (1, -1, -1)), tf.uint8)
 
@@ -139,7 +139,7 @@ def get_segmentation_summary(img, idx=0):
     """
 
     if img.get_shape().ndims == 4:
-        V = tf.cast(tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 11)), tf.uint8)
+        V = tf.cast(tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 1)), tf.uint8)    # second argument is size
     else:
         V = tf.cast(tf.slice(img, (idx, 0, 0), (1, -1, -1)), tf.uint8)
 

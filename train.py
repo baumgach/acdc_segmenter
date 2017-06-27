@@ -22,13 +22,17 @@ from config.system import *
 ### EXPERIMENT CONFIG FILE #############################################################
 # from experiments import debug as exp_config
 # from experiments import unet_bn as exp_config
-from experiments import unet_bn_224x224 as exp_config
+# from experiments import unet_bn_224x224 as exp_config
 # from experiments import unet_bn_smaller_batchsize as exp_config
 # from experiments import unet_bn_fixed_unw_xent as exp_config
 # from experiments import unet_bn_fixed as exp_config
 # from experiments import unet_bn_fixed_dice as exp_config
 # from experiments import unet_bn_bottleneck16 as exp_config
 # from experiments import unet_bn_fixed_xent_and_dice as exp_config
+# from experiments import unet_bn_212x212 as exp_config
+# from experiments import unet_bn_212x212_hack as exp_config
+# from experiments import unet_bn_212x212_hack_wd000005 as exp_config
+from experiments import unet_bn_212x212_hack_constpadding as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -195,10 +199,16 @@ def run_training(continue_run):
     init_step = 0
     if continue_run:
         logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! Continuing previous run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        init_checkpoint_path = utils.get_latest_model_checkpoint_path(LOG_DIR, 'model.ckpt')
-        logging.info('Checkpoint path: %s' % init_checkpoint_path)
-        init_step = int(init_checkpoint_path.split('/')[-1].split('-')[-1]) + 1  # plus 1 b/c otherwise starts with eval
-        logging.info('Latest step was: %d' % init_step)
+        try:
+            init_checkpoint_path = utils.get_latest_model_checkpoint_path(LOG_DIR, 'model.ckpt')
+            logging.info('Checkpoint path: %s' % init_checkpoint_path)
+            init_step = int(init_checkpoint_path.split('/')[-1].split('-')[-1]) + 1  # plus 1 b/c otherwise starts with eval
+            logging.info('Latest step was: %d' % init_step)
+        except:
+            logging.warning('!!! Didnt find init checkpoint. Maybe first run failed. Disabling continue mode...')
+            continue_run = False
+            init_step = 0
+
         logging.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
 

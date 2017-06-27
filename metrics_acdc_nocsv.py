@@ -233,6 +233,8 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
                              " {}, {}.".format(os.path.basename(p_gt),
                                                os.path.basename(p_pred)))
 
+        # print(p_gt)
+
         gt, _, header = load_nii(p_gt)
         pred, _, _ = load_nii(p_pred)
         zooms = header.get_zooms()
@@ -240,6 +242,7 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
         cardiac_phase.append(os.path.basename(p_gt).split('.nii.gz')[0].split('_')[-1])
 
         res_mat[ind, :9] = metrics(gt, pred, zooms)
+        # print(res_mat[ind, :9])
 
         for ii, struc in enumerate([3,1,2]):
 

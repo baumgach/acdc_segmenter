@@ -14,6 +14,8 @@ import cv2
 
 import h5py
 
+from skimage import transform
+
 
 class DataMakerACDC:
 
@@ -102,11 +104,12 @@ class DataMakerACDC:
                     for zz in range(img.shape[2]):
 
                         slice_img = np.squeeze(img[:,:,zz])
-                        slice_rescaled = image_utils.rescale_image(slice_img, scaling_factor)
+                        # slice_rescaled = image_utils.rescale_image(slice_img, scaling_factor)
+                        slice_rescaled = transform.rescale(slice_img, scaling_factor, order=1, preserve_range=True, multichannel=False)
 
                         slice_mask = np.squeeze(mask[:,:,zz])
-                        mask_rescaled = image_utils.rescale_image(slice_mask, scaling_factor, interp=cv2.INTER_NEAREST)
-                        # mask_rescaled = image_utils.rescale_labels_lisa_style(slice_mask, pixel_size, num_labels=4)
+                        # mask_rescaled = image_utils.rescale_image(slice_mask, scaling_factor, interp=cv2.INTER_NEAREST)
+                        mask_rescaled = transform.rescale(slice_mask, scaling_factor, order=0, preserve_range=True, multichannel=False)
 
                         # cv2.imshow('img', image_utils.convert_to_uint8(slice_rescaled))
                         # cv2.imshow('mask', image_utils.convert_to_uint8(mask_rescaled))
@@ -179,13 +182,13 @@ class DataMakerACDC:
 
 if __name__ == '__main__':
 
-    n_x = 224
-    n_y = 224
+    n_x = 212
+    n_y = 212
 
     base_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
     # data_maker = DataMakerACDC('data_288x288.hdf5', base_path, n_x, n_y)
     # data_maker = DataMakerACDC('newdata_288x288.hdf5', base_path, n_x, n_y)
-    data_maker = DataMakerACDC('newdata_224x224.hdf5', base_path, n_x, n_y, target_resolution=(1.36719, 1.36719))
+    data_maker = DataMakerACDC('betterinterp_212x212.hdf5', base_path, n_x, n_y, target_resolution=(1.36719, 1.36719))
 
     data_maker.run()
 

@@ -31,11 +31,17 @@ def placeholder_inputs(batch_size, nx, ny, nz):
     labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size, nx, ny, nz, 1), name='labels')
     return images_placeholder, labels_placeholder
 
-def score_cases(input_folder, output_folder, model_path, inference_handle, downsampling_factor, pre_classifier=None, pre_classifier_path=None):
+def score_cases(input_folder,
+                output_folder,
+                model_path,
+                inference_handle,
+                image_size,
+                target_resolution,
+                downsampling_factor,
+                pre_classifier=None,
+                pre_classifier_path=None):
 
-    nx = 288
-    ny = 288
-    nz_max = 24  #24
+    nx, ny, nz_max = image_size
     ds_fact = downsampling_factor
     use_pred = False
 
@@ -138,7 +144,7 @@ def score_cases(input_folder, output_folder, model_path, inference_handle, downs
                     else:
                         scale_z = 1.0
 
-                    scale_vector = [pixel_size[0], pixel_size[1], scale_z]
+                    scale_vector = (pixel_size[0] / target_resolution[0], pixel_size[1] / target_resolution[1], scale_z)
 
                     img_scaled = transform.rescale(img, scale_vector, order=1, preserve_range=True, multichannel=False)
 
@@ -222,8 +228,10 @@ def score_cases(input_folder, output_folder, model_path, inference_handle, downs
                         logits_out = transform.rescale(logits_out, (1, ds_fact, ds_fact, 1, 1), order=1, preserve_range=True, multichannel=False)
                         mask_out = np.uint8(np.argmax(logits_out, axis=-1))
 
-                    # prediction_nzs = logits_out[0,:,:,stack_from:stack_to, :]   # non-zero-slices
+                    # prediction_nzs = np.squeeze(logits_out[0,:,:,stack_from:stack_to, :])   # non-zero-slices
                     prediction_nzs = mask_out[0,:,:,stack_from:stack_to]   # non-zero-slices
+
+                    logging.info('Prediction_nzs mean %f' % (np.mean(prediction_nzs)))
 
                     if not prediction_nzs.shape[2] == nz_curr:
                         raise ValueError('sizes mismatch')
@@ -234,10 +242,10 @@ def score_cases(input_folder, output_folder, model_path, inference_handle, downs
                     prediction_scaled = np.zeros(img_scaled.shape)  # last dim is for logits classes
 
                     # Not really sure why this is necessary...
-                    x_s -= 1
-                    y_s -= 1
-                    x_c -= 1
-                    y_c -= 1
+                    # x_s -= 1
+                    # y_s -= 1
+                    # x_c -= 1
+                    # y_c -= 1
 
                     # insert cropped region into original image again
                     if x > nx and y > ny:
@@ -255,8 +263,20 @@ def score_cases(input_folder, output_folder, model_path, inference_handle, downs
                         # This prevents from the Apices beeing chopped off when interpolating across thick slices
                         prediction_scaled = image_utils.scale_z_with_max(prediction_scaled, scale=int(scale_z))
 
+                    logging.info('Prediction_scaled mean %f' % (np.mean(prediction_scaled)))
+
                     prediction = transform.resize(prediction_scaled, (mask.shape[0], mask.shape[1], mask.shape[2]), order=0, preserve_range=True)
-                    # prediction = np.argmax(prediction, axis=3)
+                    # prediction = transform.resize(prediction_scaled, (mask.shape[0], mask.shape[1], mask.shape[2], 4), order=1, preserve_range=True)
+
+                    logging.info('Prediction mean %f' % (np.mean(prediction)))
+                    logging.info('Prediction shape:')
+                    logging.info(prediction.shape)
+                    logging.info('Prediction dtype:')
+                    logging.info(prediction.dtype)
+
+                    # prediction = np.argmax(prediction, axis=-1)
+
+                    logging.info('argmax(Prediction) mean %f' % (np.mean(prediction)))
 
                     prediction = np.asarray(prediction, dtype=np.uint8)
                     prediction = utils.post_process_prediction_3D(prediction)
@@ -317,7 +337,8 @@ if __name__ == '__main__':
 
     # EXP_NAME = 'refine_residual_on_FMs_2'
     # EXP_NAME = 'unet_2D_AND_3D_newarch'
-    EXP_NAME = 'unet_3D'
+    # EXP_NAME = 'unet_3D'  # 0.845308 (NN, -1 hack), 0.864872 (NN), 0.838557 (Inter on SM, no max z scale), 0.838250 (Inter on SM, max z scale)
+    EXP_NAME = 'unet_3D_224x224x24'
     # EXP_NAME = 'unet_2D_as_3D_2'
 
 
@@ -329,6 +350,14 @@ if __name__ == '__main__':
 
     inference_handle = exp_configs.model_handle
     downsampling_factor = exp_configs.down_sampling_factor
+    image_size = exp_configs.image_size
+
+    if image_size[0] == 288:
+        target_resolution = (1.0, 1.0)
+    elif image_size[0] == 224:
+        target_resolution = (1.36719, 1.36719)
+    else:
+        raise ValueError('Unknown target resolution')
 
     logging.info('----------------------- Using the following settings: -----------------------')
     logging.info('model_path: %s' % model_path)
@@ -342,13 +371,22 @@ if __name__ == '__main__':
     path_gt = os.path.join(output_path, 'ground_truth')
     path_diff = os.path.join(output_path, 'difference')
     path_image = os.path.join(output_path, 'image')
+    path_eval = os.path.join(output_path, 'eval')
 
     utils.makefolder(path_gt)
     utils.makefolder(path_pred)
     utils.makefolder(path_diff)
     utils.makefolder(path_image)
 
-    score_cases(input_path, output_path, model_path, inference_handle, downsampling_factor, pre_classifier=preclassifier_model, pre_classifier_path=preclassifier_path)
+    score_cases(input_path,
+                output_path,
+                model_path,
+                inference_handle,
+                image_size=image_size,
+                target_resolution=target_resolution,
+                downsampling_factor=downsampling_factor,
+                pre_classifier=preclassifier_model,
+                pre_classifier_path=preclassifier_path)
 
     import metrics_acdc_nocsv
     [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)

@@ -36,6 +36,58 @@ def max_pool_layer3d(x, kernel_size=(2, 2, 2), strides=(2, 2, 2), padding="SAME"
     return op
 
 
+def crop_and_concat_layer(inputs, axis=-1):
+
+    output_size = inputs[0].get_shape().as_list()
+    larger_size = inputs[1].get_shape().as_list()
+
+    start_crop = np.subtract(larger_size, output_size) // 2
+
+    if len(output_size) == 5:   # 3D images
+
+        raise NotImplementedError('todo')
+
+    elif len(output_size) == 4:   # 2D images
+
+        second_tensor = tf.slice(inputs[1],
+                                 (0, start_crop[1], start_crop[2], 0),
+                                 (-1, output_size[1], output_size[2], -1))
+
+        print('Tensor shapes:')
+        print(second_tensor.get_shape().as_list())
+        print(inputs[0].get_shape().as_list())
+
+        return tf.concat([inputs[0], second_tensor], axis=axis)
+
+    else:
+
+        raise ValueError('Unexpected number of dimensions on tensor: %d' % len(output_size))
+
+
+def pad_to_size(bottom, output_size):
+
+    input_size = bottom.get_shape().as_list()
+    size_diff = np.subtract(output_size, input_size)
+
+    pad_size = size_diff // 2
+    odd_bit = np.mod(size_diff, 2)
+
+    if len(input_size) == 5:
+        raise NotImplementedError('todo')
+
+    elif len(input_size) == 4:
+
+        padded =  tf.pad(bottom, paddings=[[0,0],
+                                        [pad_size[1], pad_size[1] + odd_bit[1]],
+                                        [pad_size[2], pad_size[2] + odd_bit[2]],
+                                        [0,0]])
+
+        print('Padded shape:')
+        print(padded.get_shape().as_list())
+
+
+
+
 ### CONVOLUTIONAL LAYERS ##############################################################################33
 
 def conv2D_layer(bottom,
