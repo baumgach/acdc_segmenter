@@ -62,7 +62,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
         # saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
 
         # automatically find latest best file
-        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+        # checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
+        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_xent.ckpt')
         saver.restore(sess, checkpoint_path)
 
         init_iteration = int(checkpoint_path.split('/')[-1].split('-')[-1])
@@ -328,8 +329,8 @@ if __name__ == '__main__':
 
     # EXP_NAME = 'unet_bn_224_224' # N 0.899504 @ 6099
 
-    EXP_NAME = 'unet_bn_212x212_hack'
-    # EXP_NAME = 'unet_bn_212x212'
+    EXP_NAME = 'unet_bn_212x212_hack' # 0.900920 @ 13499
+    # EXP_NAME = 'unet_bn_212x212'  # 0.896995 @ 13899
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]

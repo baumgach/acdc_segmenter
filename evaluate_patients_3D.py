@@ -228,8 +228,10 @@ def score_cases(input_folder,
                         logits_out = transform.rescale(logits_out, (1, ds_fact, ds_fact, 1, 1), order=1, preserve_range=True, multichannel=False)
                         mask_out = np.uint8(np.argmax(logits_out, axis=-1))
 
-                    # prediction_nzs = logits_out[0,:,:,stack_from:stack_to, :]   # non-zero-slices
+                    # prediction_nzs = np.squeeze(logits_out[0,:,:,stack_from:stack_to, :])   # non-zero-slices
                     prediction_nzs = mask_out[0,:,:,stack_from:stack_to]   # non-zero-slices
+
+                    logging.info('Prediction_nzs mean %f' % (np.mean(prediction_nzs)))
 
                     if not prediction_nzs.shape[2] == nz_curr:
                         raise ValueError('sizes mismatch')
@@ -240,10 +242,10 @@ def score_cases(input_folder,
                     prediction_scaled = np.zeros(img_scaled.shape)  # last dim is for logits classes
 
                     # Not really sure why this is necessary...
-                    x_s -= 1
-                    y_s -= 1
-                    x_c -= 1
-                    y_c -= 1
+                    # x_s -= 1
+                    # y_s -= 1
+                    # x_c -= 1
+                    # y_c -= 1
 
                     # insert cropped region into original image again
                     if x > nx and y > ny:
@@ -261,8 +263,20 @@ def score_cases(input_folder,
                         # This prevents from the Apices beeing chopped off when interpolating across thick slices
                         prediction_scaled = image_utils.scale_z_with_max(prediction_scaled, scale=int(scale_z))
 
+                    logging.info('Prediction_scaled mean %f' % (np.mean(prediction_scaled)))
+
                     prediction = transform.resize(prediction_scaled, (mask.shape[0], mask.shape[1], mask.shape[2]), order=0, preserve_range=True)
-                    # prediction = np.argmax(prediction, axis=3)
+                    # prediction = transform.resize(prediction_scaled, (mask.shape[0], mask.shape[1], mask.shape[2], 4), order=1, preserve_range=True)
+
+                    logging.info('Prediction mean %f' % (np.mean(prediction)))
+                    logging.info('Prediction shape:')
+                    logging.info(prediction.shape)
+                    logging.info('Prediction dtype:')
+                    logging.info(prediction.dtype)
+
+                    # prediction = np.argmax(prediction, axis=-1)
+
+                    logging.info('argmax(Prediction) mean %f' % (np.mean(prediction)))
 
                     prediction = np.asarray(prediction, dtype=np.uint8)
                     prediction = utils.post_process_prediction_3D(prediction)
@@ -323,8 +337,8 @@ if __name__ == '__main__':
 
     # EXP_NAME = 'refine_residual_on_FMs_2'
     # EXP_NAME = 'unet_2D_AND_3D_newarch'
-    EXP_NAME = 'unet_3D'
-    # EXP_NAME = 'unet_3D_224x224x24'
+    # EXP_NAME = 'unet_3D'  # 0.845308 (NN, -1 hack), 0.864872 (NN), 0.838557 (Inter on SM, no max z scale), 0.838250 (Inter on SM, max z scale)
+    EXP_NAME = 'unet_3D_224x224x24'
     # EXP_NAME = 'unet_2D_as_3D_2'
 
 
@@ -375,7 +389,7 @@ if __name__ == '__main__':
                 pre_classifier_path=preclassifier_path)
 
     import metrics_acdc_nocsv
-    [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred, path_eval)
+    [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)
 
     print('Dice 1: %f' % dice1)
     print('Dice 2: %f' % dice2)

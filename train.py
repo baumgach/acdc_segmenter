@@ -29,8 +29,10 @@ from config.system import *
 # from experiments import unet_bn_fixed_dice as exp_config
 # from experiments import unet_bn_bottleneck16 as exp_config
 # from experiments import unet_bn_fixed_xent_and_dice as exp_config
-from experiments import unet_bn_212x212 as exp_config
+# from experiments import unet_bn_212x212 as exp_config
 # from experiments import unet_bn_212x212_hack as exp_config
+# from experiments import unet_bn_212x212_hack_wd000005 as exp_config
+from experiments import unet_bn_212x212_hack_constpadding as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')

@@ -171,13 +171,31 @@ def resize_labels_lisa_style(label_map, size, num_labels):
 
 def scale_z_with_max(label_map, scale=2):
 
-    nx, ny, nz = label_map.shape
+    if label_map.ndim == 3:
 
-    new_label_map = np.zeros((nx,ny,nz//scale))
+        nx, ny, nz = label_map.shape
 
-    for ii in range(nz//scale):
+        new_label_map = np.zeros((nx,ny,nz//scale))
 
-        curr_slice = np.max(label_map[:,:,scale*ii:scale*ii+scale], axis=-1)
-        new_label_map[:,:,ii] = curr_slice
+        for ii in range(nz//scale):
 
-    return new_label_map
+            curr_slice = np.max(label_map[:,:,scale*ii:scale*ii+scale], axis=-1)
+            new_label_map[:,:,ii] = curr_slice
+
+        return new_label_map
+
+    elif label_map.ndim == 4:
+
+        nx, ny, nz, nc = label_map.shape
+
+        new_label_map = np.zeros((nx, ny, nz // scale, nc))
+
+        for ii in range(nz // scale):
+            curr_slice = np.max(label_map[:, :, scale * ii:scale * ii + scale, :], axis=2)
+            new_label_map[:, :, ii, :] = curr_slice
+
+        return new_label_map
+
+    else:
+
+        raise ValueError('Dont know how to deal with ndim %d' % label_map.ndim)
