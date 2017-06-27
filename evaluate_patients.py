@@ -3,6 +3,7 @@ import image_utils
 
 import os
 import glob
+import socket
 
 # import matplotlib.pyplot as plt
 
@@ -25,7 +26,14 @@ import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
 
 from skimage import transform
+from config.system import *
 
+hostname = socket.gethostname()
+print('Running on %s' % hostname)
+if not hostname == local_hostname:
+    logging.info('Setting CUDA_VISIBLE_DEVICES variable...')
+    os.environ["CUDA_VISIBLE_DEVICES"] = os.environ['SGE_GPU']
+    logging.info('SGE_GPU is %s' % os.environ['SGE_GPU'])
 
 def placeholder_inputs(batch_size, nx, ny):
 
@@ -56,6 +64,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
         # automatically find latest best file
         checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
         saver.restore(sess, checkpoint_path)
+
+        init_iteration = int(checkpoint_path.split('/')[-1].split('-')[-1])
 
         total_time = 0
         total_volumes = 0
@@ -247,6 +257,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
 
         print('Average time per volume: %f' % (total_time/total_volumes))
 
+    return init_iteration
+
 
 # def get_prediction_for_image(img, sess, images_placeholder, mask, softmax, model_path, inference_handle):
 #
@@ -300,16 +312,24 @@ def post_process_prediction(img):
 if __name__ == '__main__':
 
     base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
+    # base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/model_backups/'
 
-    EXP_NAME = 'unet_bn_rerun'  # 0.89623 @ 14499
-    # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # 0.893037
-    # EXP_NAME = 'unet_bn_bottleneck16' # 0.890652
-    # EXP_NAME = 'unet_bn_fixed_xent_and_dice'  #0.876541
-    
-    # EXP_NAME = 'unet_bn_fixed_undw_xent' # 0.885276  -- finished  @ 17299
-    # EXP_NAME = 'unet_bn_fixed' # 0.891060 @ 18199,
-    # EXP_NAME = 'unet_bn_fixed_dice' #  0.867664  w/o pp 0.865265, 0.877424 @ 17799
-    # EXP_NAME = 'unet_bn_224_224'
+    # EXP_NAME = 'unet_bn_rerun_best'  # N 0.908085 @ 8799
+
+    # EXP_NAME = 'unet_bn_rerun'  # N 0.907006 @ 19699
+    # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # N 0.903069 @ 8199
+    # EXP_NAME = 'unet_bn_bottleneck16' # N 0.901233 @ 3699
+
+    # EXP_NAME = 'unet_bn_fixed_xent_and_dice'  # N 0.903237 @ 11699
+    # EXP_NAME = 'unet_bn_fixed_undw_xent' # N 0.897012 @ 17299
+    # EXP_NAME = 'unet_bn_fixed' # N 0.901278 @ 18199,
+    # EXP_NAME = 'unet_bn_fixed_dice' # N 0.888020 @ 17799
+
+
+    # EXP_NAME = 'unet_bn_224_224' # N 0.899504 @ 6099
+
+    EXP_NAME = 'unet_bn_212x212_hack'
+    # EXP_NAME = 'unet_bn_212x212'
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
@@ -338,21 +358,25 @@ if __name__ == '__main__':
         target_resolution = (1.0, 1.0)
     elif image_size[0] == 224:
         target_resolution = (1.36719, 1.36719)
+    elif image_size[0] == 212:
+        target_resolution = (1.36719, 1.36719)
     else:
         raise ValueError('Unknown target resolution')
 
-    score_data(input_path, output_path, model_path, inference_handle, image_size=image_size, target_resolution=target_resolution)
+    init_iteration = score_data(input_path, output_path, model_path, inference_handle, image_size=image_size, target_resolution=target_resolution)
 
     import metrics_acdc_nocsv
     [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)
 
+    print('Model: %s' % model_path)
+    print('Used init iteration: %d' % init_iteration)
     print('Dice 1: %f' % dice1)
     print('Dice 2: %f' % dice2)
     print('Dice 3: %f' % dice3)
     print('Mean dice: %f' % np.mean([dice1, dice2, dice3]))
 
     logging.info('Model: %s' % model_path)
-
+    logging.info('Used init iteration: %d' % init_iteration)
     logging.info('Dice 1: %f' % dice1)
     logging.info('Dice 2: %f' % dice2)
     logging.info('Dice 3: %f' % dice3)

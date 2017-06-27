@@ -323,8 +323,8 @@ if __name__ == '__main__':
 
     # EXP_NAME = 'refine_residual_on_FMs_2'
     # EXP_NAME = 'unet_2D_AND_3D_newarch'
-    # EXP_NAME = 'unet_3D'
-    EXP_NAME = 'unet_3D_224x224x24'
+    EXP_NAME = 'unet_3D'
+    # EXP_NAME = 'unet_3D_224x224x24'
     # EXP_NAME = 'unet_2D_as_3D_2'
 
 
