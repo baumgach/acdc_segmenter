@@ -365,9 +365,9 @@ def print_table1(df, eval_dir):
             dat = df.loc[df['struc'] == struc_name]
 
             if measure == 'dice':
-                line_string += ' & ${:.3f} ({:.3f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                line_string += ' & ${:.3f}\,({:.3f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
             else:
-                line_string += ' & ${:.2f} ({:.2f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                line_string += ' & ${:.2f}\,({:.2f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
 
         if s_idx < 2:
             header_string += ' & '
@@ -409,9 +409,9 @@ def print_table2(df, eval_dir):
                     dat = df.loc[(df['phase'] == phase) & (df['struc'] == struc_name)]
 
                     if measure == 'dice':
-                        line_string += ' & ${:.3f} ({:.3f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                        line_string += ' & ${:.3f}\,({:.3f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
                     else:
-                        line_string += ' & ${:.2f} ({:.2f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
+                        line_string += ' & ${:.2f}\,({:.2f})$ '.format(np.mean(dat[measure]), np.std(dat[measure]))
 
                 if p_idx == 0:
                     header_string += ' & '
