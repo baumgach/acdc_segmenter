@@ -191,7 +191,7 @@ def compute_metrics_on_directories(dir_gt, dir_pred):
     Directory of the predicted segmentation maps.
     """
 
-    res_mat, _, _ = compute_metrics_on_directories_raw(dir_gt, dir_pred)
+    res_mat, _, _, _ = compute_metrics_on_directories_raw(dir_gt, dir_pred)
 
     dice1 = np.mean(res_mat[:,0])
     dice2 = np.mean(res_mat[:,3])
@@ -218,6 +218,7 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
 
     res = []
     cardiac_phase = []
+    file_names = []
 
     measure_names = ['Dice LV', 'Volume LV', 'Err LV(ml)',
                      'Dice RV', 'Volume RV', 'Err RV(ml)', 'Dice MYO', 'Volume MYO', 'Err MYO(ml)',
@@ -241,6 +242,8 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
         res.append(metrics(gt, pred, zooms))
         cardiac_phase.append(os.path.basename(p_gt).split('.nii.gz')[0].split('_')[-1])
 
+        file_names.append(os.path.basename(p_pred))
+
         res_mat[ind, :9] = metrics(gt, pred, zooms)
         # print(res_mat[ind, :9])
 
@@ -254,10 +257,10 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
 
         ind += 1
 
-    return res_mat, cardiac_phase, measure_names
+    return res_mat, cardiac_phase, measure_names, file_names
 
 
-def mat_to_df(metrics_out, phase, measure_names):
+def mat_to_df(metrics_out, phase, measure_names, file_names):
 
     num_subj = len(phase)
 
@@ -284,10 +287,11 @@ def mat_to_df(metrics_out, phase, measure_names):
                                  metrics_out[:, measure_ind_dict['Err MYO(ml)']]))
 
     phases_list = phase * 3
+    file_names_list = file_names * 3
 
     df = pd.DataFrame({'dice': dices_list, 'hd': hausdorff_list, 'assd': assd_list,
                        'vol': vol_list, 'vol_err': vol_err_list,
-                      'phase': phases_list, 'struc': struc_name})
+                      'phase': phases_list, 'struc': struc_name, 'filename': file_names_list})
 
     return df
 #
@@ -333,8 +337,8 @@ def clinical_measures(df):
 
 def get_measures(dir_gt, dir_pred, eval_dir):
 
-    metrics_out, phase, measure_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
-    df = mat_to_df(metrics_out, phase, measure_names)
+    metrics_out, phase, measure_names, file_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
+    df = mat_to_df(metrics_out, phase, measure_names, file_names)
 
     # clinical_measures(df)
     print_table1(df, eval_dir)
@@ -465,14 +469,28 @@ def boxplot_metrics(df, eval_dir):
     print('the following measures should be the same as online')
 
     for struc_name in ['LV', 'RV', 'Myo']:
+
+        print(struc_name)
+
         for cardiac_phase in ['ED', 'ES']:
+
+            print('    {}'.format(cardiac_phase))
+
             dat = df.loc[(df['phase'] == cardiac_phase) & (df['struc'] == struc_name)]
 
-            print('{} {}, mean += std Dice: {:.3f} ({:.3f})'.format(cardiac_phase, struc_name, np.mean(dat['dice']), np.std(dat['dice'])))
-            print('{} {}, mean Hausdorff: {:.2f} ({:.2f})'.format(cardiac_phase, struc_name, np.mean(dat['hd']), np.std(dat['hd'])))
-            print('{} {}, mean ASSD: {:.2f} ({:.2f})'.format(cardiac_phase, struc_name, np.mean(dat['assd']), np.std(dat['assd'])))
+            for measure_name in ['dice', 'hd', 'assd']:
+
+                print('       {} -- mean (std): {:.3f} ({:.3f}) '.format(measure_name,
+                                                                     np.mean(dat[measure_name]), np.std(dat[measure_name])))
+
+                ind_med = np.argsort(dat[measure_name]).iloc[len(dat[measure_name])//2]
+                print('             median {}: {:.3f} ({})'.format(measure_name,
+                                                            dat[measure_name].iloc[ind_med], dat['filename'].iloc[ind_med]))
+
 
     print('--------------------------------------------')
+
+
 
     return 0
 
