@@ -43,7 +43,8 @@ import pandas as pd
 from medpy.metric.binary import hd, dc, assd
 import numpy as np
 
-
+import SimpleITK as sitk
+import matplotlib.pyplot as plt
 
 HEADER = ["Name", "Dice LV", "Volume LV", "Err LV(ml)",
           "Dice RV", "Volume RV", "Err RV(ml)",
@@ -346,6 +347,54 @@ def get_measures(dir_gt, dir_pred, eval_dir):
     boxplot_metrics(df, eval_dir)
 
 
+def sitk_show(img, title=None, margin=0.05, dpi=40, out_file=None):
+    nda = sitk.GetArrayFromImage(img)
+    spacing = img.GetSpacing()
+    figsize = (1 + margin) * nda.shape[0] / dpi, (1 + margin) * nda.shape[1] / dpi
+    extent = (0, nda.shape[1] * spacing[1], nda.shape[0] * spacing[0], 0)
+    fig = plt.figure(figsize=figsize, dpi=dpi)
+    ax = fig.add_axes([margin, margin, 1 - 2 * margin, 1 - 2 * margin])
+
+    plt.set_cmap("gray")
+    ax.imshow(nda, extent=extent, interpolation=None)
+
+    if title:
+        plt.title(title)
+
+    plt.show()
+
+    if out_file is not None:
+        plt.savefig(out_file)
+
+
+def plot_examples():
+
+    dir_gt = '/home/kochl/experiments/acdc-2017/prediction_data/ground_truth'
+    dir_pred = '/home/kochl/experiments/acdc-2017/prediction_data/prediction'
+    dir_img = '/home/kochl/experiments/acdc-2017/prediction_data/image'
+
+    eval_dir = './'
+
+    subj = 'patient060_ED.nii.gz'
+
+    gt = sitk.ReadImage(os.path.join(dir_gt, subj))
+    pred = sitk.ReadImage(os.path.join(dir_pred, subj))
+    img = sitk.ReadImage(os.path.join(dir_img, subj))
+
+    imgSmoothInt = sitk.Cast(sitk.RescaleIntensity(img), pred.GetPixelID())
+
+    num_slices = img.GetDepth()
+
+    for ind in [0, num_slices // 2, num_slices - 1]:
+
+        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], sitk.LabelContour(gt[:,:,ind])),
+                  out_file=os.path.join(eval_dir, 'gt_{}.eps'.format(ind)))
+        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], sitk.LabelContour(pred[:,:,ind])),
+                  out_file=os.path.join(eval_dir, 'pred_{}.eps'.format(ind)))
+
+    pass
+
+
 def print_table1(df, eval_dir):
     """
     prints mean (+- std) values for Dice and ASSD, all structures, averaged over both phases.
@@ -487,6 +536,14 @@ def boxplot_metrics(df, eval_dir):
                 print('             median {}: {:.3f} ({})'.format(measure_name,
                                                             dat[measure_name].iloc[ind_med], dat['filename'].iloc[ind_med]))
 
+                ind_worst = np.argsort(dat[measure_name]).iloc[0]
+                print('             worst {}: {:.3f} ({})'.format(measure_name,
+                                                            dat[measure_name].iloc[ind_worst], dat['filename'].iloc[ind_worst]))
+
+                ind_best = np.argsort(dat[measure_name]).iloc[-1]
+                print('             best {}: {:.3f} ({})'.format(measure_name,
+                                                            dat[measure_name].iloc[ind_best], dat['filename'].iloc[ind_best]))
+
 
     print('--------------------------------------------')
 
@@ -504,6 +561,8 @@ def main(path_gt, path_pred, eval_dir):
         os.makedirs(eval_dir)
 
     if os.path.isdir(path_gt) and os.path.isdir(path_pred):
+
+        plot_examples()
 
         get_measures(path_gt, path_pred, eval_dir)
         # boxplot_metrics(path_gt, path_pred, eval_dir)
