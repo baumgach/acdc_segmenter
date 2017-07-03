@@ -367,19 +367,25 @@ def sitk_show(img, title=None, margin=0.05, dpi=40, out_file=None):
         plt.savefig(out_file)
 
 
-def plot_examples():
+def plot_examples(dir_gt, dir_pred, dir_img, eval_dir):
 
-    dir_gt = '/home/kochl/experiments/acdc-2017/prediction_data/ground_truth'
-    dir_pred = '/home/kochl/experiments/acdc-2017/prediction_data/prediction'
-    dir_img = '/home/kochl/experiments/acdc-2017/prediction_data/image'
 
-    eval_dir = './'
+    # median dice: 0.900 (patient060_ED.nii.gz)
+    # worst dice: 0.846 (patient085_ED.nii.gz)
+    # best dice: 0.947 (patient040_ED.nii.gz)
+    subjects = ['patient060_ED.nii.gz', 'patient085_ED.nii.gz', 'patient040_ED.nii.gz']
 
-    subj = 'patient060_ED.nii.gz'
+    for subj_file in subjects:
+        plot_basal_mid_apical(subj_file, eval_dir, dir_gt, dir_pred, dir_img)
 
-    gt = sitk.ReadImage(os.path.join(dir_gt, subj))
-    pred = sitk.ReadImage(os.path.join(dir_pred, subj))
-    img = sitk.ReadImage(os.path.join(dir_img, subj))
+def plot_basal_mid_apical(subj_file, eval_dir, dir_gt, dir_pred, dir_img):
+
+
+    subj_id = subj_file.split('.nii')[0]
+
+    gt = sitk.ReadImage(os.path.join(dir_gt, subj_file))
+    pred = sitk.ReadImage(os.path.join(dir_pred, subj_file))
+    img = sitk.ReadImage(os.path.join(dir_img, subj_file))
 
     imgSmoothInt = sitk.Cast(sitk.RescaleIntensity(img), pred.GetPixelID())
 
@@ -387,10 +393,10 @@ def plot_examples():
 
     for ind in [0, num_slices // 2, num_slices - 1]:
 
-        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], sitk.LabelContour(gt[:,:,ind])),
-                  out_file=os.path.join(eval_dir, 'gt_{}.eps'.format(ind)))
-        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], sitk.LabelContour(pred[:,:,ind])),
-                  out_file=os.path.join(eval_dir, 'pred_{}.eps'.format(ind)))
+        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], gt[:,:,ind]),
+                  out_file=os.path.join(eval_dir, 'gt_{}_{}.eps'.format(subj_id, ind)))
+        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], pred[:,:,ind]),
+                  out_file=os.path.join(eval_dir, 'pred_{}_{}.eps'.format(subj_id, ind)))
 
     pass
 
@@ -562,7 +568,7 @@ def main(path_gt, path_pred, eval_dir):
 
     if os.path.isdir(path_gt) and os.path.isdir(path_pred):
 
-        plot_examples()
+        plot_examples(path_gt, path_pred, os.path.join(os.path.split(path_gt)[0], 'image'), eval_dir)
 
         get_measures(path_gt, path_pred, eval_dir)
         # boxplot_metrics(path_gt, path_pred, eval_dir)
