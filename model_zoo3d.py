@@ -382,6 +382,116 @@ def unet_bn_2D3D_larger(images, training):
     return pred
 
 
+def unet3D_bn_padded(images, training):
+
+    images_padded = tf.pad(images, [[0, 0], [44, 44], [44, 44],[44, 44], [0, 0]], 'CONSTANT')
+
+    conv1_1 = layers.conv3D_layer_bn(images_padded, 'conv1_1', num_filters=32, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv1_2 = layers.conv3D_layer_bn(conv1_1, 'conv1_2', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    pool1 = layers.max_pool_layer3d(conv1_2, kernel_size=(2,2,2), strides=(2,2,2))
+
+    conv2_1 = layers.conv3D_layer_bn(pool1, 'conv2_1', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv2_2 = layers.conv3D_layer_bn(conv2_1, 'conv2_2', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    pool2 = layers.max_pool_layer3d(conv2_2, kernel_size=(2,2,2), strides=(2,2,2))
+
+    conv3_1 = layers.conv3D_layer_bn(pool2, 'conv3_1', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv3_2 = layers.conv3D_layer_bn(conv3_1, 'conv3_2', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    pool3 = layers.max_pool_layer3d(conv3_2, kernel_size=(2,2,2), strides=(2,2,2))
+
+    conv4_1 = layers.conv3D_layer_bn(pool3, 'conv4_1', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv4_2 = layers.conv3D_layer_bn(conv4_1, 'conv4_2', num_filters=512, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    upconv3 = layers.deconv3D_layer_bn(conv4_2, name='upconv3', kernel_size=(4, 4, 4), strides=(2, 2, 2), num_filters=512, training=training)
+    concat3 = layers.crop_and_concat_layer([upconv3, conv3_2], axis=4)
+
+    conv5_1 = layers.conv3D_layer_bn(concat3, 'conv5_1', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv5_2 = layers.conv3D_layer_bn(conv5_1, 'conv5_2', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    upconv2 = layers.deconv3D_layer_bn(conv5_2, name='upconv2', kernel_size=(4, 4, 4), strides=(2, 2, 2), num_filters=256, training=training)
+    concat2 = layers.crop_and_concat_layer([upconv2, conv2_2], axis=4)
+
+    conv6_1 = layers.conv3D_layer_bn(concat2, 'conv6_1', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv6_2 = layers.conv3D_layer_bn(conv6_1, 'conv6_2', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    upconv1 = layers.deconv3D_layer_bn(conv6_2, name='upconv1', kernel_size=(4, 4, 2), strides=(2, 2, 2), num_filters=128, training=training)
+    concat1 = layers.crop_and_concat_layer([upconv1, conv1_2], axis=4)
+
+    conv8_1 = layers.conv3D_layer_bn(concat1, 'conv8_1', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv8_2 = layers.conv3D_layer_bn(conv8_1, 'conv8_2', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    pred = layers.conv3D_layer_bn(conv8_2, 'pred', num_filters=NUM_CLASSES, kernel_size=(1,1,1), activation=layers.no_activation, training=training, padding='VALID')
+
+    return pred
+
+def unet3D_bn_padded_oneTPpool(images, training):
+
+    images_padded = tf.pad(images, [[0, 0], [44, 44], [44, 44], [16, 16], [0, 0]], 'CONSTANT')
+
+    conv1_1 = layers.conv3D_layer_bn(images_padded, 'conv1_1', num_filters=32, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv1_2 = layers.conv3D_layer_bn(conv1_1, 'conv1_2', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv1_2')
+    print(conv1_2.get_shape().as_list())
+
+    pool1 = layers.max_pool_layer3d(conv1_2, kernel_size=(2,2,1), strides=(2,2,1))
+
+    conv2_1 = layers.conv3D_layer_bn(pool1, 'conv2_1', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv2_2 = layers.conv3D_layer_bn(conv2_1, 'conv2_2', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv2_2')
+    print(conv2_2.get_shape().as_list())
+
+    pool2 = layers.max_pool_layer3d(conv2_2, kernel_size=(2,2,1), strides=(2,2,1))
+
+    conv3_1 = layers.conv3D_layer_bn(pool2, 'conv3_1', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv3_2 = layers.conv3D_layer_bn(conv3_1, 'conv3_2', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv3_2')
+    print(conv3_2.get_shape().as_list())
+
+    pool3 = layers.max_pool_layer3d(conv3_2, kernel_size=(2,2,2), strides=(2,2,2))
+
+    conv4_1 = layers.conv3D_layer_bn(pool3, 'conv4_1', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv4_2 = layers.conv3D_layer_bn(conv4_1, 'conv4_2', num_filters=512, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv4_2')
+    print(conv4_2.get_shape().as_list())
+
+    upconv3 = layers.deconv3D_layer_bn(conv4_2, name='upconv3', kernel_size=(4, 4, 4), strides=(2, 2, 2), num_filters=512, training=training)
+    concat3 = layers.crop_and_concat_layer([upconv3, conv3_2], axis=4)
+
+    conv5_1 = layers.conv3D_layer_bn(concat3, 'conv5_1', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv5_2 = layers.conv3D_layer_bn(conv5_1, 'conv5_2', num_filters=256, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv5_2')
+    print(conv5_2.get_shape().as_list())
+
+    upconv2 = layers.deconv3D_layer_bn(conv5_2, name='upconv2', kernel_size=(4, 4, 2), strides=(2, 2, 1), num_filters=256, training=training)
+    concat2 = layers.crop_and_concat_layer([upconv2, conv2_2], axis=4)
+
+    conv6_1 = layers.conv3D_layer_bn(concat2, 'conv6_1', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv6_2 = layers.conv3D_layer_bn(conv6_1, 'conv6_2', num_filters=128, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv6_2')
+    print(conv6_2.get_shape().as_list())
+
+    upconv1 = layers.deconv3D_layer_bn(conv6_2, name='upconv1', kernel_size=(4, 4, 2), strides=(2, 2, 1), num_filters=128, training=training)
+    concat1 = layers.crop_and_concat_layer([upconv1, conv1_2], axis=4)
+
+    conv8_1 = layers.conv3D_layer_bn(concat1, 'conv8_1', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+    conv8_2 = layers.conv3D_layer_bn(conv8_1, 'conv8_2', num_filters=64, kernel_size=(3,3,3), training=training, padding='VALID')
+
+    print('conv8_2')
+    print(conv8_2.get_shape().as_list())
+
+    pred = layers.conv3D_layer_bn(conv8_2, 'pred', num_filters=NUM_CLASSES, kernel_size=(1,1,1), activation=layers.no_activation, training=training, padding='VALID')
+
+    return pred
+
+
 def unet3D_bn(images, training):
 
     conv1_1 = layers.conv3D_layer_bn(images, 'conv1_1', num_filters=32, kernel_size=(3,3,3), training=training)

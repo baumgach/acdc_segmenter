@@ -12,7 +12,7 @@ import logging
 
 import model
 import models_refine3d
-import models3d
+import model_zoo3d
 import tensorflow as tf
 
 import model_zoo
@@ -338,7 +338,9 @@ if __name__ == '__main__':
     # EXP_NAME = 'refine_residual_on_FMs_2'
     # EXP_NAME = 'unet_2D_AND_3D_newarch'
     # EXP_NAME = 'unet_3D'  # 0.845308 (NN, -1 hack), 0.864872 (NN), 0.838557 (Inter on SM, no max z scale), 0.838250 (Inter on SM, max z scale)
-    EXP_NAME = 'unet_3D_224x224x24'
+    # EXP_NAME = 'unet_3D_224x224x24'
+    # EXP_NAME = 'unet_3D_padding_100x100x28' # 0.833079
+    EXP_NAME = 'unet_3D_oneTPpool_padding_116x116x28' # 0.853705, 0.858840 @ 10699
     # EXP_NAME = 'unet_2D_as_3D_2'
 
 
@@ -356,6 +358,10 @@ if __name__ == '__main__':
         target_resolution = (1.0, 1.0)
     elif image_size[0] == 224:
         target_resolution = (1.36719, 1.36719)
+    elif image_size[0] == 100:
+        target_resolution = (3.0, 3.0)
+    elif image_size[0] == 116:
+        target_resolution = (2.5, 2.5)
     else:
         raise ValueError('Unknown target resolution')
 

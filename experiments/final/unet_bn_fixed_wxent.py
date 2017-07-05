@@ -1,16 +1,14 @@
-import model_zoo3d
+import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_2D_AND_3D_small'
+experiment_name = 'unet_bn_fixed_wxent'
 
-batch_size = 1
+batch_size = 10
 learning_rate = 0.01
-data_file = 'allvars_288x288x24.hdf5'
-model_handle = model_zoo3d.unet_bn_2D3D_half #small  #half
+data_file = 'betterinterp_212x212.hdf5'  # 'newdata_288x288.hdf5'
+image_size = (212, 212)
+model_handle = model_zoo.unet_bn_padded_fixed_const_padding
 optimizer_handle = tf.train.AdamOptimizer
-input_dataset = 'images'
-input_channels = 1
-down_sampling_factor = 1  # 1 means no down samplign, 2 means half the size (must be int)
 
 schedule_lr = False
 warmup_training = True
@@ -26,3 +24,5 @@ do_fliplr = False
 
 # Rarely used settings
 use_data_fraction = False  # Should normally be False
+
+

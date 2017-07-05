@@ -49,11 +49,35 @@ def placeholder_inputs(batch_size, nx, ny):
 
 def generate_featuremaps(input_folder, output_file):
 
-    nx = 224
-    ny = 224
-    nz_max = 24
+    # nx = 212
+    # ny = 212
+    # nz_max = 28
+    #
+    # target_resolution = (1.36719, 1.36719)
 
-    target_resolution = (1.36719, 1.36719)
+    # nx = 172
+    # ny = 172
+    # nz_max = 28
+    #
+    # target_resolution = (1.68, 1.68, 5.0)
+
+    # nx = 148
+    # ny = 148
+    # nz_max = 28
+    #
+    # target_resolution = (2.0, 2.0, 5.0)
+    #
+    # nx = 100
+    # ny = 100
+    # nz_max = 28
+    #
+    # target_resolution = (3.0, 3.0, 5.0)
+
+    nx = 116
+    ny = 116
+    nz_max = 28
+
+    target_resolution = (2.5, 2.5, 5.0)
 
     hdf5_file = h5py.File(output_file, "w")
 
@@ -154,13 +178,14 @@ def generate_featuremaps(input_folder, output_file):
             img = image_utils.normalise_image(img)
 
             pixel_size = (img_dat[2].structarr['pixdim'][1], img_dat[2].structarr['pixdim'][2], img_dat[2].structarr['pixdim'][3])
+            print(pixel_size)
 
-            if pixel_size[2] == 10:
-                scale_z = 2.0
-            else:
-                scale_z = 1.0
+            # if pixel_size[2] == 10:
+            #     scale_z = 2.0
+            # else:
+            #     scale_z = 1.0
 
-            scale_vector = [pixel_size[0] / target_resolution[0], pixel_size[1] / target_resolution[1], scale_z]
+            scale_vector = [pixel_size[0] / target_resolution[0], pixel_size[1] / target_resolution[1], pixel_size[2]/ target_resolution[2]]
 
             img_scaled = transform.rescale(img, scale_vector, order=1, preserve_range=True, multichannel=False)
             mask_scaled = transform.rescale(mask, scale_vector, order=0, preserve_range=True, multichannel=False)
@@ -256,7 +281,7 @@ if __name__ == '__main__':
 
     base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir'
 
-    output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/data3D_224x224x24.hdf5'
+    output_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/data3D_116x116x28.hdf5'
 
     input_path = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
 

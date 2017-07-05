@@ -1,7 +1,7 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_212x212'
+experiment_name = 'unet_bn_212x212_correct'
 
 batch_size = 10
 learning_rate = 0.01

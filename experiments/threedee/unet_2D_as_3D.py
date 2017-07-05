@@ -1,4 +1,4 @@
-import models3d
+import model_zoo3d
 import tensorflow as tf
 
 experiment_name = 'unet_2D_as_3D_2'
@@ -6,7 +6,7 @@ experiment_name = 'unet_2D_as_3D_2'
 batch_size = 1
 learning_rate = 0.01
 data_file = 'feature_maps_and_pred.hdf5'  #'allvars_288x288x24.hdf5'
-model_handle = models3d.unet_bn_translated_to_3D_half
+model_handle = model_zoo3d.unet_bn_translated_to_3D_half
 optimizer_handle = tf.train.AdamOptimizer
 input_dataset = 'images'
 input_channels = 1

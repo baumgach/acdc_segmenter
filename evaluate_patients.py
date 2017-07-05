@@ -56,14 +56,10 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
         sess.run(init)
 
         # Get the latest checkpoint file
-        #saver.restore(sess, tf.train.latest_checkpoint(model_path))
+        # checkpoint_path = tf.train.latest_checkpoint(model_path)
+        # saver.restore(sess, checkpoint_path)
 
-        # Use specific best file
-        # saver.restore(sess, os.path.join(model_path, 'model_best_dice.ckpt-5799'))
-
-        # automatically find latest best file
-        # checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
-        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_xent.ckpt')
+        checkpoint_path = utils.get_latest_model_checkpoint_path(model_path, 'model_best_dice.ckpt')
         saver.restore(sess, checkpoint_path)
 
         init_iteration = int(checkpoint_path.split('/')[-1].split('-')[-1])
@@ -185,10 +181,18 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
                                     slice_predictions[:, :,:] = prediction_cropped[x_c:x_c+ x, y_c:y_c + y,:]
 
                             # prediction = image_utils.rescale_image(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1]), interp=cv2.INTER_NEAREST)
+
+                            # RESCALING ON MASKS
+                            # slice_predictions = np.argmax(slice_predictions, axis=-1)
+                            # prediction = transform.rescale(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1]), order=0,
+                            #                   preserve_range=True, multichannel=False)
+
+
+                            # RESCALING ON THE LOGITS
                             prediction = transform.rescale(slice_predictions, (1.0/scaling_factor[0], 1.0/scaling_factor[1], 1), order=1,
                                               preserve_range=True, multichannel=False)
-
                             prediction = np.uint8(np.argmax(prediction, axis=-1))
+
 
                             if not prediction.shape == mask.shape[:2]:
                                 logging.warning('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111')
@@ -255,6 +259,8 @@ def score_data(input_folder, output_folder, model_path, inference_handle, image_
                         # Calculate wrong voxels
                         wrong_pixels = np.sum(difference_mask)
                         print('Wrong pixels: %d' % wrong_pixels)
+                        print('Pixelsize:')
+                        print(pixel_size)
 
         print('Average time per volume: %f' % (total_time/total_volumes))
 
@@ -312,11 +318,40 @@ def post_process_prediction(img):
 
 if __name__ == '__main__':
 
-    base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
+    base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir_final/'
+
+    # DIFFERENT OPTIMISATIONS
+
+    # EXP_NAME = 'unet_bn_hack_dice'  # 0.885329 @ 6499
+    # EXP_NAME = 'first_round/unet_bn_hack_dice'  # 0.889955 @ 5999
+
+    EXP_NAME = 'first_round/unet_bn_hack_wxent'  #  0.913946
+    # EXP_NAME = 'unet_bn_hack_wxent'  #
+
+    # EXP_NAME = 'first_round/unet_bn_hack_xent'  # doesn't exist anymore
+    # EXP_NAME = 'unet_bn_hack_xent'  # 0.909849
+
+    # DIFFERENT MODELS
+
+    # EXP_NAME = 'unet_bn_hack_wxent'  #
+
+    # EXP_NAME = 'fcn_8_bn_wxent'  # 0.903229
+
+    # EXP_NAME = 'first_round/unet_bn_hack_wxent'  #  0.913946   FIXED
+
+    # EXP_NAME = 'unet_bn_fixed_wxent'  # 0.910703 @ 6799
+
+
+
+    # EXP_NAME = 'first_round/unet_bn_hack_natural_wxent'  # 0.881139
+    # EXP_NAME = 'first_round/unet_bn_hack_xent'  # 0.913163 (first round)
+
+
     # base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/model_backups/'
-
     # EXP_NAME = 'unet_bn_rerun_best'  # N 0.908085 @ 8799
+    # EXP_NAME = 'unet_bn_212x212_hack_constpadding_1'  # 0.907704 @ 3299
 
+    # base_path = '/scratch_net/bmicdl03/code/python/ACDC_challenge_refactored/acdc_logdir/'
     # EXP_NAME = 'unet_bn_rerun'  # N 0.907006 @ 19699
     # EXP_NAME = 'unet_bn_rerun_smaller_batchsize' # N 0.903069 @ 8199
     # EXP_NAME = 'unet_bn_bottleneck16' # N 0.901233 @ 3699
@@ -329,8 +364,15 @@ if __name__ == '__main__':
 
     # EXP_NAME = 'unet_bn_224_224' # N 0.899504 @ 6099
 
-    EXP_NAME = 'unet_bn_212x212_hack' # 0.900920 @ 13499
+    # EXP_NAME = 'unet_bn_212x212_hack' # 0.900920 @ 13499
     # EXP_NAME = 'unet_bn_212x212'  # 0.896995 @ 13899
+    # EXP_NAME = 'unet_bn_212x212_hack_constpadding'  # 0.907704 @ 3299
+    # EXP_NAME = 'unet_bn_212x212_hack_wd0.000005'  #
+
+    # EXP_NAME = 'unet_bn_212x212_hack_constpadding_correct'  # 0.914245 @ 5399, No post proc 0.913946, interp on mask: 0.910414
+    # EXP_NAME = 'unet_bn_212x212_hack_correct'  # 0.905247 @ 5899
+    # EXP_NAME = 'unet_bn_212x212_fixed_constpadding_correct'  # 0.895480 @ 3199
+    # EXP_NAME = 'unet_bn_212x212_hack_constpadding_nobnlastlayer'  #
 
     model_path = os.path.join(base_path, EXP_NAME)
     config_file = glob.glob(model_path + '/*py')[0]
@@ -368,6 +410,7 @@ if __name__ == '__main__':
 
     import metrics_acdc_nocsv
     [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.compute_metrics_on_directories(path_gt, path_pred)
+    # [dice1, dice2, dice3, vold1, vold2, vold3] = metrics_acdc_nocsv.main(path_gt, path_pred, eval_path)
 
     print('Model: %s' % model_path)
     print('Used init iteration: %d' % init_iteration)

@@ -33,6 +33,7 @@ def get_latest_model_checkpoint_path(folder, name):
     iteration_nums = []
     for file in glob.glob(os.path.join(folder, '%s*.meta' % name)):
 
+        file = file.split('/')[-1]
         file_base, postfix_and_number, rest = file.split('.')[0:3]
         it_num = int(postfix_and_number.split('-')[-1])
 

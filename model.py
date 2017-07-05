@@ -42,7 +42,9 @@ def loss(logits, labels, weight_decay=0.00005, loss_type='weighted_crossentropy'
 
     if loss_type == 'weighted_crossentropy':
         segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
-                                                                          class_weights=[0.1, 0.3, 0.3, 0.3])
+                                                                          class_weights=[0.1, 0.3, 0.3, 0.3])  #
+                                                            # real distribution: [0.006205, 0.341400, 0.325820, 0.326575]
+                                                            # values used before: [0.1, 0.3, 0.3, 0.3]
     elif loss_type == 'crossentropy':
         # segmentation_loss = losses.pixel_wise_cross_entropy_loss_weighted(logits, labels,
         #                                                                   class_weights=[0.25, 0.25, 0.25, 0.25])

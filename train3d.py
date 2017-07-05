@@ -28,7 +28,12 @@ from skimage import transform
 # from experiments.threedee import refine_residual_units as exp_config
 # from experiments.threedee import unet_2D_AND_3D_larger as exp_config
 # from experiments.threedee import unet_3d as exp_config
-from experiments.threedee import unet_3d_224x224 as exp_config
+# from experiments.threedee import unet_3d_224x224 as exp_config
+# from experiments.threedee import unet_2D_as_3D_224x224 as exp_config
+# from experiments.threedee import unet_3d_padding_oneTPpool_148x148x28 as exp_config
+from experiments.threedee import unet_3d_padding_oneTPpool_116x116x28 as exp_config
+# from experiments.threedee import unet_3d_padding_116x116x28 as exp_config
+# from experiments.threedee import unet_3d_padding_100x100x28 as exp_config
 ########################################################################################
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -402,21 +407,47 @@ def run_training(continue_run=False):
 
                     checkpoint_file = os.path.join(LOG_DIR, 'model.ckpt')
                     saver.save(sess, checkpoint_file, global_step=step)
-                    # Evaluate against the training set.
-                    logging.info('Training Data Eval:')
-                    [train_loss, train_dice] = do_eval(sess,
-                                                       eval_loss,
-                                                       images_placeholder,
-                                                       labels_placeholder,
-                                                       training_time_placeholder,
-                                                       feature_maps_train,
-                                                       labels_train,
-                                                       exp_config.batch_size)
 
-                    train_summary_msg = sess.run(train_summary, feed_dict={train_error_: train_loss,
-                                                                           train_dice_: train_dice}
-                    )
-                    summary_writer.add_summary(train_summary_msg, step)
+                    if (step + 1) % (2*EVAL_FREQUENCY) == 0:
+
+                        # Evaluate against the training set.
+                        logging.info('Training Data Eval:')
+                        [train_loss, train_dice] = do_eval(sess,
+                                                           eval_loss,
+                                                           images_placeholder,
+                                                           labels_placeholder,
+                                                           training_time_placeholder,
+                                                           feature_maps_train,
+                                                           labels_train,
+                                                           exp_config.batch_size)
+
+                        train_summary_msg = sess.run(train_summary, feed_dict={train_error_: train_loss,
+                                                                               train_dice_: train_dice}
+                        )
+                        summary_writer.add_summary(train_summary_msg, step)
+
+                        loss_history.append(train_loss)
+                        if len(loss_history) > 5:
+                            loss_history.pop(0)
+                            loss_gradient = (loss_history[-5]-loss_history[-1])/2
+
+                        logging.info('loss gradient is currently %f' % loss_gradient)
+
+                        if exp_config.schedule_lr and loss_gradient < SCHEDULE_GRADIENT_THRESHOLD:
+                            logging.warning('Reducing learning rate!')
+                            curr_lr /= 10.0
+                            logging.info('Learning rate changed to: %f' % curr_lr)
+
+                            # reset loss history to give the optimisation some time to start decreasing again
+                            loss_gradient = np.inf
+                            loss_history = []
+
+                        if train_loss <= last_train:  # best_train:
+                            logging.info('Decrease in training error!')
+                        else:
+                            logging.info('No improvment in training error for %d steps' % no_improvement_counter)
+
+                        last_train = train_loss
 
                     # Evaluate against the validation set.
                     logging.info('Validation Data Eval:')
@@ -433,21 +464,6 @@ def run_training(continue_run=False):
                     )
                     summary_writer.add_summary(val_summary_msg, step)
 
-                    loss_history.append(train_loss)
-                    if len(loss_history) > 5:
-                        loss_history.pop(0)
-                        loss_gradient = (loss_history[-5]-loss_history[-1])/2
-
-                    logging.info('loss gradient is currently %f' % loss_gradient)
-
-                    if exp_config.schedule_lr and loss_gradient < SCHEDULE_GRADIENT_THRESHOLD:
-                        logging.warning('Reducing learning rate!')
-                        curr_lr /= 10.0
-                        logging.info('Learning rate changed to: %f' % curr_lr)
-
-                        # reset loss history to give the optimisation some time to start decreasing again
-                        loss_gradient = np.inf
-                        loss_history = []
 
                     if val_dice > best_dice:
                         best_dice = val_dice
@@ -460,13 +476,6 @@ def run_training(continue_run=False):
                         best_file = os.path.join(LOG_DIR, 'model_best_xent.ckpt')
                         saver_best_xent.save(sess, best_file, global_step=step)
                         logging.info('Found new best crossentropy on validation set! - %f -  Saving model_best_xent.ckpt' % val_loss)
-
-                    if train_loss <= last_train: #best_train:
-                        logging.info('Decrease in training error!')
-                    else:
-                        logging.info('No improvment in training error for %d steps' % no_improvement_counter)
-
-                    last_train = train_loss
 
                 step += 1
 

@@ -13,7 +13,7 @@
 #$ -S /bin/bash
 #
 ## <= 1h is short queue, <= 6h is middle queue, <= 48 h is long queue
-#$ -l h_rt=06:00:00
+#$ -l h_rt=48:00:00
 
 ## the maximum memory usage of this job, (below 4G does not make much sense)
 #$ -l h_vmem=40G

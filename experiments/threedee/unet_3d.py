@@ -1,4 +1,4 @@
-import models3d
+import model_zoo3d
 import tensorflow as tf
 
 experiment_name = 'unet_3D'
@@ -6,7 +6,7 @@ experiment_name = 'unet_3D'
 batch_size = 1
 learning_rate = 0.01
 data_file = 'allvars_288x288x24.hdf5'
-model_handle = models3d.unet3D_bn
+model_handle = model_zoo3d.unet3D_bn
 optimizer_handle = tf.train.AdamOptimizer
 input_dataset = 'images'
 input_channels = 1

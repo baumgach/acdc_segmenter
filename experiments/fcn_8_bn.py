@@ -5,7 +5,8 @@ experiment_name = 'fcn_8_bn'
 
 batch_size = 10
 learning_rate = 0.01
-data_file = 'data_288x288.hdf5'
+data_file = 'betterinterp_224x224.hdf5'
+image_size = (224, 224)
 model_handle = model_zoo.VGG16_FCN_8_bn
 optimizer_handle = tf.train.AdamOptimizer
 

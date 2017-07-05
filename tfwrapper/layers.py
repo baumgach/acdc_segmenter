@@ -38,6 +38,13 @@ def max_pool_layer3d(x, kernel_size=(2, 2, 2), strides=(2, 2, 2), padding="SAME"
 
 def crop_and_concat_layer(inputs, axis=-1):
 
+    ### The second item of inputs is cropped to the size of the first item of inputs
+    ### then the two are stacked.
+
+    # TODO: extend so inputs can have more than two items
+    if len(inputs) != 2:
+        raise NotImplementedError('For now inputs can only have length 2')
+
     output_size = inputs[0].get_shape().as_list()
     larger_size = inputs[1].get_shape().as_list()
 
@@ -45,7 +52,9 @@ def crop_and_concat_layer(inputs, axis=-1):
 
     if len(output_size) == 5:   # 3D images
 
-        raise NotImplementedError('todo')
+        second_tensor = tf.slice(inputs[1],
+                                 (0, start_crop[1], start_crop[2], start_crop[3], 0),
+                                 (-1, output_size[1], output_size[2], output_size[3], -1))
 
     elif len(output_size) == 4:   # 2D images
 
@@ -53,18 +62,20 @@ def crop_and_concat_layer(inputs, axis=-1):
                                  (0, start_crop[1], start_crop[2], 0),
                                  (-1, output_size[1], output_size[2], -1))
 
-        print('Tensor shapes:')
-        print(second_tensor.get_shape().as_list())
-        print(inputs[0].get_shape().as_list())
-
-        return tf.concat([inputs[0], second_tensor], axis=axis)
+        # print('Tensor shapes:')
+        # print(second_tensor.get_shape().as_list())
+        # print(inputs[0].get_shape().as_list())
 
     else:
 
         raise ValueError('Unexpected number of dimensions on tensor: %d' % len(output_size))
 
+    return tf.concat([inputs[0], second_tensor], axis=axis)
+
 
 def pad_to_size(bottom, output_size):
+
+    # TODO: implement for 3D data
 
     input_size = bottom.get_shape().as_list()
     size_diff = np.subtract(output_size, input_size)

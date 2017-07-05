@@ -1,13 +1,13 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet_bn_212x212_hack_correct'
+experiment_name = 'fcn_8_bn_wxent'
 
 batch_size = 10
 learning_rate = 0.01
-data_file = 'newdata_212x212.hdf5'  # 'newdata_288x288.hdf5'
-image_size = (212, 212)
-model_handle = model_zoo.unet_bn_padded_hack
+data_file = 'betterinterp_224x224.hdf5'
+image_size = (224, 224)
+model_handle = model_zoo.VGG16_FCN_8_bn
 optimizer_handle = tf.train.AdamOptimizer
 
 schedule_lr = False
@@ -20,9 +20,6 @@ loss_type = 'weighted_crossentropy'  # crossentropy/weighted_crossentropy/dice
 augment_batch = False
 do_rotations = True
 do_scaleaug = False
-do_fliplr = False
 
 # Rarely used settings
 use_data_fraction = False  # Should normally be False
-
-

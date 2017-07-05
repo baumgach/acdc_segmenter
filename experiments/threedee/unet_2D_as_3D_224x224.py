@@ -1,12 +1,13 @@
 import model_zoo3d
 import tensorflow as tf
 
-experiment_name = 'unet_2D_AND_3D_small'
+experiment_name = 'unet_2D_as_3D_224x224x24'
 
 batch_size = 1
 learning_rate = 0.01
-data_file = 'allvars_288x288x24.hdf5'
-model_handle = model_zoo3d.unet_bn_2D3D_half #small  #half
+data_file = 'data3D_224x224x24.hdf5'  #'allvars_288x288x24.hdf5'
+image_size = (224, 224, 24)
+model_handle = model_zoo3d.unet_bn_translated_to_3D_half
 optimizer_handle = tf.train.AdamOptimizer
 input_dataset = 'images'
 input_channels = 1
