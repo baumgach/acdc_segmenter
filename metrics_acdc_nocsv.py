@@ -43,7 +43,8 @@ import pandas as pd
 from medpy.metric.binary import hd, dc, assd
 import numpy as np
 
-
+import SimpleITK as sitk
+import matplotlib.pyplot as plt
 
 HEADER = ["Name", "Dice LV", "Volume LV", "Err LV(ml)",
           "Dice RV", "Volume RV", "Err RV(ml)",
@@ -191,7 +192,7 @@ def compute_metrics_on_directories(dir_gt, dir_pred):
     Directory of the predicted segmentation maps.
     """
 
-    res_mat, _, _ = compute_metrics_on_directories_raw(dir_gt, dir_pred)
+    res_mat, _, _, _ = compute_metrics_on_directories_raw(dir_gt, dir_pred)
 
     dice1 = np.mean(res_mat[:,0])
     dice2 = np.mean(res_mat[:,3])
@@ -218,6 +219,7 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
 
     res = []
     cardiac_phase = []
+    file_names = []
 
     measure_names = ['Dice LV', 'Volume LV', 'Err LV(ml)',
                      'Dice RV', 'Volume RV', 'Err RV(ml)', 'Dice MYO', 'Volume MYO', 'Err MYO(ml)',
@@ -241,6 +243,8 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
         res.append(metrics(gt, pred, zooms))
         cardiac_phase.append(os.path.basename(p_gt).split('.nii.gz')[0].split('_')[-1])
 
+        file_names.append(os.path.basename(p_pred))
+
         res_mat[ind, :9] = metrics(gt, pred, zooms)
         # print(res_mat[ind, :9])
 
@@ -254,10 +258,10 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
 
         ind += 1
 
-    return res_mat, cardiac_phase, measure_names
+    return res_mat, cardiac_phase, measure_names, file_names
 
 
-def mat_to_df(metrics_out, phase, measure_names):
+def mat_to_df(metrics_out, phase, measure_names, file_names):
 
     num_subj = len(phase)
 
@@ -284,10 +288,11 @@ def mat_to_df(metrics_out, phase, measure_names):
                                  metrics_out[:, measure_ind_dict['Err MYO(ml)']]))
 
     phases_list = phase * 3
+    file_names_list = file_names * 3
 
     df = pd.DataFrame({'dice': dices_list, 'hd': hausdorff_list, 'assd': assd_list,
                        'vol': vol_list, 'vol_err': vol_err_list,
-                      'phase': phases_list, 'struc': struc_name})
+                      'phase': phases_list, 'struc': struc_name, 'filename': file_names_list})
 
     return df
 #
@@ -333,13 +338,67 @@ def clinical_measures(df):
 
 def get_measures(dir_gt, dir_pred, eval_dir):
 
-    metrics_out, phase, measure_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
-    df = mat_to_df(metrics_out, phase, measure_names)
+    metrics_out, phase, measure_names, file_names = compute_metrics_on_directories_raw(dir_gt, dir_pred)
+    df = mat_to_df(metrics_out, phase, measure_names, file_names)
 
     # clinical_measures(df)
     print_table1(df, eval_dir)
     print_table2(df, eval_dir)
     boxplot_metrics(df, eval_dir)
+
+
+def sitk_show(img, title=None, margin=0.05, dpi=40, out_file=None):
+    nda = sitk.GetArrayFromImage(img)
+    spacing = img.GetSpacing()
+    figsize = (1 + margin) * nda.shape[0] / dpi, (1 + margin) * nda.shape[1] / dpi
+    extent = (0, nda.shape[1] * spacing[1], nda.shape[0] * spacing[0], 0)
+    fig = plt.figure(figsize=figsize, dpi=dpi)
+    ax = fig.add_axes([margin, margin, 1 - 2 * margin, 1 - 2 * margin])
+
+    plt.set_cmap("gray")
+    ax.imshow(nda, extent=extent, interpolation=None)
+
+    if title:
+        plt.title(title)
+
+    plt.show()
+
+    if out_file is not None:
+        plt.savefig(out_file)
+
+
+def plot_examples(dir_gt, dir_pred, dir_img, eval_dir):
+
+
+    # median dice: 0.900 (patient060_ED.nii.gz)
+    # worst dice: 0.846 (patient085_ED.nii.gz)
+    # best dice: 0.947 (patient040_ED.nii.gz)
+    subjects = ['patient060_ED.nii.gz', 'patient085_ED.nii.gz', 'patient040_ED.nii.gz']
+
+    for subj_file in subjects:
+        plot_basal_mid_apical(subj_file, eval_dir, dir_gt, dir_pred, dir_img)
+
+def plot_basal_mid_apical(subj_file, eval_dir, dir_gt, dir_pred, dir_img):
+
+
+    subj_id = subj_file.split('.nii')[0]
+
+    gt = sitk.ReadImage(os.path.join(dir_gt, subj_file))
+    pred = sitk.ReadImage(os.path.join(dir_pred, subj_file))
+    img = sitk.ReadImage(os.path.join(dir_img, subj_file))
+
+    imgSmoothInt = sitk.Cast(sitk.RescaleIntensity(img), pred.GetPixelID())
+
+    num_slices = img.GetDepth()
+
+    for ind in [0, num_slices // 2, num_slices - 1]:
+
+        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], gt[:,:,ind]),
+                  out_file=os.path.join(eval_dir, 'gt_{}_{}.eps'.format(subj_id, ind)))
+        sitk_show(sitk.LabelOverlay(imgSmoothInt[:,:,ind], pred[:,:,ind]),
+                  out_file=os.path.join(eval_dir, 'pred_{}_{}.eps'.format(subj_id, ind)))
+
+    pass
 
 
 def print_table1(df, eval_dir):
@@ -409,6 +468,7 @@ def print_table2(df, eval_dir):
                     dat = df.loc[(df['phase'] == phase) & (df['struc'] == struc_name)]
 
                     if measure == 'dice':
+
                         line_string += ' & {:.3f}\,({:.3f}) '.format(np.mean(dat[measure]), np.std(dat[measure]))
                     else:
                         line_string += ' & {:.2f}\,({:.2f}) '.format(np.mean(dat[measure]), np.std(dat[measure]))
@@ -465,14 +525,36 @@ def boxplot_metrics(df, eval_dir):
     print('the following measures should be the same as online')
 
     for struc_name in ['LV', 'RV', 'Myo']:
+
+        print(struc_name)
+
         for cardiac_phase in ['ED', 'ES']:
+
+            print('    {}'.format(cardiac_phase))
+
             dat = df.loc[(df['phase'] == cardiac_phase) & (df['struc'] == struc_name)]
 
-            print('{} {}, mean += std Dice: {:.3f} ({:.3f})'.format(cardiac_phase, struc_name, np.mean(dat['dice']), np.std(dat['dice'])))
-            print('{} {}, mean Hausdorff: {:.2f} ({:.2f})'.format(cardiac_phase, struc_name, np.mean(dat['hd']), np.std(dat['hd'])))
-            print('{} {}, mean ASSD: {:.2f} ({:.2f})'.format(cardiac_phase, struc_name, np.mean(dat['assd']), np.std(dat['assd'])))
+            for measure_name in ['dice', 'hd', 'assd']:
+
+                print('       {} -- mean (std): {:.3f} ({:.3f}) '.format(measure_name,
+                                                                     np.mean(dat[measure_name]), np.std(dat[measure_name])))
+
+                ind_med = np.argsort(dat[measure_name]).iloc[len(dat[measure_name])//2]
+                print('             median {}: {:.3f} ({})'.format(measure_name,
+                                                            dat[measure_name].iloc[ind_med], dat['filename'].iloc[ind_med]))
+
+                ind_worst = np.argsort(dat[measure_name]).iloc[0]
+                print('             worst {}: {:.3f} ({})'.format(measure_name,
+                                                            dat[measure_name].iloc[ind_worst], dat['filename'].iloc[ind_worst]))
+
+                ind_best = np.argsort(dat[measure_name]).iloc[-1]
+                print('             best {}: {:.3f} ({})'.format(measure_name,
+                                                            dat[measure_name].iloc[ind_best], dat['filename'].iloc[ind_best]))
+
 
     print('--------------------------------------------')
+
+
 
     return 0
 
@@ -486,6 +568,8 @@ def main(path_gt, path_pred, eval_dir):
         os.makedirs(eval_dir)
 
     if os.path.isdir(path_gt) and os.path.isdir(path_pred):
+
+        plot_examples(path_gt, path_pred, os.path.join(os.path.split(path_gt)[0], 'image'), eval_dir)
 
         get_measures(path_gt, path_pred, eval_dir)
         # boxplot_metrics(path_gt, path_pred, eval_dir)
