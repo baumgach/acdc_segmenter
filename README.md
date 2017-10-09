@@ -1,7 +1,7 @@
 
 This repository contains code to train state-of-the-art cardiac segmentation networks as described in this
 conference submission: [An Exploration of 2D and 3D Deep Learning
-Techniques for Cardiac MR Image Segmentation](http://www.vision.ee.ethz.ch/~baumgach/papers/ACDC_challenge_paper.pdf).
+Techniques for Cardiac MR Image Segmentation](https://arxiv.org/abs/1709.04496).
 
 Authors:
 - Christian F. Baumgartner ([email](mailto:baumgartner@vision.ee.ethz.ch))
