@@ -686,4 +686,3 @@ def _add_summaries(op, weights, biases):
     tf.summary.histogram(weights.name, weights)
     tf.summary.histogram(biases.name, biases)
     tf.summary.histogram(op.op.name + '/activations', op)
-    tf.summary.histogram(op.op.name + '/gradients', op)
