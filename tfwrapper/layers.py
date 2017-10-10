@@ -203,10 +203,11 @@ def conv2D_layer(bottom,
     with tf.variable_scope(name):
 
         weights = get_weight_variable(weight_shape, name='W', type=weight_init, regularize=True)
-        biases = get_bias_variable(bias_shape, name='b')
-
         op = tf.nn.conv2d(bottom, filter=weights, strides=strides_augm, padding=padding)
+
+        biases = None
         if add_bias:
+            biases = get_bias_variable(bias_shape, name='b')
             op = tf.nn.bias_add(op, biases)
         op = activation(op)
 
@@ -240,10 +241,11 @@ def conv3D_layer(bottom,
     with tf.variable_scope(name):
 
         weights = get_weight_variable(weight_shape, name='W', type=weight_init, regularize=True)
-        biases = get_bias_variable(bias_shape, name='b')
-
         op = tf.nn.conv3d(bottom, filter=weights, strides=strides_augm, padding=padding)
+
+        biases = None
         if add_bias:
+            biases = get_bias_variable(bias_shape, name='b')
             op = tf.nn.bias_add(op, biases)
         op = activation(op)
 
@@ -282,14 +284,16 @@ def deconv2D_layer(bottom,
     with tf.variable_scope(name):
 
         weights = get_weight_variable(weight_shape, name='W', type=weight_init, regularize=True)
-        biases = get_bias_variable(bias_shape, name='b')
 
         op = tf.nn.conv2d_transpose(bottom,
                                     filter=weights,
                                     output_shape=output_shape,
                                     strides=strides_augm,
                                     padding=padding)
+
+        biases = None
         if add_bias:
+            biases = get_bias_variable(bias_shape, name='b')
             op = tf.nn.bias_add(op, biases)
         op = activation(op)
 
@@ -331,14 +335,16 @@ def deconv3D_layer(bottom,
     with tf.variable_scope(name):
 
         weights = get_weight_variable(weight_shape, name='W', type=weight_init, regularize=True)
-        biases = get_bias_variable(bias_shape, name='b')
 
         op = tf.nn.conv3d_transpose(bottom,
                                     filter=weights,
                                     output_shape=output_shape,
                                     strides=strides_augm,
                                     padding=padding)
+
+        biases = None
         if add_bias:
+            biases = get_bias_variable(bias_shape, name='b')
             op = tf.nn.bias_add(op, biases)
         op = activation(op)
 
@@ -372,10 +378,12 @@ def conv2D_dilated_layer(bottom,
     with tf.variable_scope(name):
 
         weights = get_weight_variable(weight_shape, name='W', type=weight_init, regularize=True)
-        biases = get_bias_variable(bias_shape, name='b')
 
         op = tf.nn.atrous_conv2d(bottom, filters=weights, rate=rate, padding=padding)
+
+        biases = None
         if add_bias:
+            biases = get_bias_variable(bias_shape, name='b')
             op = tf.nn.bias_add(op, biases)
         op = activation(op)
 
@@ -405,10 +413,12 @@ def dense_layer(bottom,
     with tf.variable_scope(name):
 
         weights = get_weight_variable(weight_shape, name='W', type=weight_init, regularize=True)
-        biases = get_bias_variable(bias_shape, name='b')
 
         op = tf.matmul(bottom_flat, weights)
+
+        biases = None
         if add_bias:
+            biases = get_bias_variable(bias_shape, name='b')
             op = tf.nn.bias_add(op, biases)
         op = activation(op)
 
@@ -684,5 +694,6 @@ def _add_summaries(op, weights, biases):
 
     # Tensorboard variables
     tf.summary.histogram(weights.name, weights)
-    tf.summary.histogram(biases.name, biases)
+    if biases:
+        tf.summary.histogram(biases.name, biases)
     tf.summary.histogram(op.op.name + '/activations', op)
