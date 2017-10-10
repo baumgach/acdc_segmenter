@@ -1,7 +1,8 @@
 
 This repository contains code to train state-of-the-art cardiac segmentation networks as described in this
-conference submission: [An Exploration of 2D and 3D Deep Learning
-Techniques for Cardiac MR Image Segmentation](https://arxiv.org/abs/1709.04496).
+paper: [An Exploration of 2D and 3D Deep Learning
+Techniques for Cardiac MR Image Segmentation](https://arxiv.org/abs/1709.04496). The modified 
+U-Net architecture achieved the **3rd overall rank** at the MICCAI 2017 [ACDC Cardiac segmentation challenge](https://www.creatis.insa-lyon.fr/Challenge/acdc/index.html). 
 
 Authors:
 - Christian F. Baumgartner ([email](mailto:baumgartner@vision.ee.ethz.ch))
@@ -11,65 +12,34 @@ Authors:
 ## Requirements 
 
 - Python 3.4 (only tested with 3.4.3)
-- Tensorflow >= 1.0 (only tested with 1.1.0)
+- Tensorflow >= 1.0 (tested with 1.1.0, and 1.2.0)
 - The remainder of the requirements are given in `requirements.txt`
 
 
-## System setup
-
-If you are running this code at the ETH Computer Vision Lab (CVL), make sure you have set up your system
-as is required.
-
-Specifically, setup your python using `pyenv` as described [here](https://computing.ee.ethz.ch/Programming/Languages/Python). Since the code requires Python 3.4 (ideally 3.4.3) make sure you choose that version in the `pyenv install`, and `pyenv global` steps. If you have previously installed another Python version using `pyenv` simply repeat the last three steps for version 3.4.3. 
-
-Setup your CUDA and `tensorflow` as described [here](https://docs.google.com/document/d/1UXhXkqn20v_jC3CzSvdgvgED2iuXIKsgcW16GtVYBu8/edit#heading=h.p5485wgdj33x). The code was tested with CUDA 8.0.44, and CuDNN 5.1.10. *Do not* pip install tensorflow yet. This will be done after setting up the virtualenv and installing the `requirements.txt`. 
-
-The code was tested using `tensorflow-1.1.0`. There were a lot of breaks with the release tensorflow 1.x, so the code is unlikely to 
-work with earlier versions. However, it might work with version 1.2 (untested).
-
-To run the code on the Biwi GPU clusters you will also need to setup the environment for that. All infos can be found [here](https://wiki.vision.ee.ethz.ch/itet/gridengine?s[]=gpu). If you are a not a permanent member of the CVL (Biwi) group, you need to email [Alex Locher](mailto:alocher@vision.ee.ethz.ch) so he can create a grid engine account for you. 
-
-You will also need to include some settings into your `.bashrc`. Simply paste the following lines into your shell
-
-```
-echo "# settings for BIWI cluster" >> ~/.bashrc
-echo "source /home/sgeadmin/BIWICELL/common/settings.sh" >> ~/.bashrc
-```
-
 ## Getting the code
 
-Simply clone the repository by typing
+Clone the repository by typing
 
-``` git clone git@git.ee.ethz.ch:baumgach/acdc_segmenter_internal.git ```
+``` git clone https://github.com/baumgach/acdc_segmenter.git ```
 
-If this is your first time using the D-ITET gitlab server, you will need to [setup an SSH key](https://git.ee.ethz.ch/help/ssh/README.md) first.  
 
-## Setting up virtualenv
+## Installing required Python packages
 
-For convenience it is often best to set up seperate virtualenv's for usage on GPU and usage on CPU. This code requires Python 3.x
-and was only tested with Python 3.4.3. It is not backwards compatible with Python 2.x. In order to set up the virtual 
-environment appropriately, run the following command:
-
-``` virtualenv -p python3.4 name-of-your-env ```
-
-WARNING: If you intend to use this virtual environment on the Biwi GPU clusters you need to be in your `/scratch_net/<machine-name>` while setting everything up. The location of packages in the virtualenv will be hard-coded with respect to the directory you are in, so when you run the code on a remote host it will not be able to find the packages.  
-
-After setting up and activating the virtualenv, it might be necessary to first upgrade pip.
-
-``` pip install --upgrade pip ```
+Create an environment with Python 3.4. If you use virutalenv it 
+might be necessary to first upgrade pip (``` pip install --upgrade pip ```).
 
 Next, install the required packages listed in the `requirements.txt` file:
 
 ``` pip install -r requirements.txt ```
 
-Lastly, install tensorflow:
+Then, install tensorflow:
 
 ``` pip install tensorflow==1.2 ```
 or
 ``` pip install tensorflow-gpu==1.2 ```
 
 depending if you are setting up your GPU environment or CPU environment. The code was also
-tested with tensorflow 1.1 if for some reason you prefer that version. Tensorflow 1.3 is causing
+tested with tensorflow 1.1 if for some reason you prefer that version. Tensorflow 1.3 is currently causing
 trouble with the installation at the moment. 
 
 WARNING: Installing tensorflow before the requirements.txt will lead to weird errors while compiling `scikit-image` in `pip install -r requirements`. Make sure you install tensorflow *after* the requirements. 
@@ -101,7 +71,7 @@ activated
 
 ``` tensorboard --logdir=acdc_logdir --port 8008 ```
 
-Then, navigate to [127.0.0.1:6006](http://127.0.0.1:6006) in your browser to open tensorboard.
+Then, navigate to [127.0.0.1:8008](http://127.0.0.1:8008) in your browser to open tensorboard.
 
 At any point during the training, or after, you can evaluate your model by typing the following:
 
