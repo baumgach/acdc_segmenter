@@ -3,7 +3,6 @@
 # Lisa M. Koch (lisa.margret.koch@gmail.com)
 
 import tensorflow as tf
-import math
 import numpy as np
 
 from tfwrapper import utils
@@ -177,7 +176,7 @@ def batch_normalisation_layer(bottom, name, training, moving_average_decay=0.99,
 
         return normalised
 
-### FEED_FORWARD LAYERS ##############################################################################33
+### FEED_FORWARD LAYERS ##############################################################################
 
 def conv2D_layer(bottom,
                  name,
@@ -615,6 +614,7 @@ def dense_layer_bn(bottom,
 
 def get_weight_variable(shape, name=None, type='xavier_uniform', regularize=True, **kwargs):
 
+    initialise_from_constant = False
     if type == 'xavier_uniform':
         initial = xavier_initializer(uniform=True, dtype=tf.float32)
     elif type == 'xavier_normal':
@@ -625,25 +625,29 @@ def get_weight_variable(shape, name=None, type='xavier_uniform', regularize=True
         initial = variance_scaling_initializer(uniform=True, factor=2.0, mode='FAN_IN', dtype=tf.float32)
     elif type == 'caffe_uniform':
         initial = variance_scaling_initializer(uniform=True, factor=1.0, mode='FAN_IN', dtype=tf.float32)
-    elif type == 'simple_normal':
+    elif type == 'simple':
         stddev = kwargs.get('stddev', 0.02)
         initial = tf.truncated_normal(shape, stddev=stddev, dtype=tf.float32)
+        initialise_from_constant = True
     elif type == 'bilinear':
         weights = _bilinear_upsample_weights(shape)
         initial = tf.constant(weights, shape=shape, dtype=tf.float32)
+        initialise_from_constant = True
     else:
         raise ValueError('Unknown initialisation requested: %s' % type)
 
     if name is None:  # This keeps to option open to use unnamed Variables
         weight = tf.Variable(initial)
     else:
-        weight = tf.get_variable(name, shape=shape, initializer=initial)
+        if initialise_from_constant:
+            weight = tf.get_variable(name, initializer=initial)
+        else:
+            weight = tf.get_variable(name, shape=shape, initializer=initial)
 
     if regularize:
         tf.add_to_collection('weight_variables', weight)
 
     return weight
-
 
 
 def get_bias_variable(shape, name=None, init_value=0.0):
