@@ -330,7 +330,7 @@ def load_and_maybe_process_data(input_folder,
                                 size,
                                 target_resolution,
                                 force_overwrite=False,
-                                split_test_train=False):
+                                split_test_train=True):
 
     '''
     This function is used to load and if necessary preprocesses the ACDC challenge data

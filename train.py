@@ -499,7 +499,6 @@ def iterate_minibatches(images, labels, batch_size, augment_batch=False):
                                          do_scaleaug=exp_config.do_scaleaug,
                                          do_fliplr=exp_config.do_fliplr)
 
-
         yield X, y
 
 
