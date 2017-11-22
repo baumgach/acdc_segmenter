@@ -8,7 +8,7 @@ import numpy as np
 import logging
 
 import argparse
-import metrics_acdc_simple
+import metrics_acdc
 import time
 from importlib.machinery import SourceFileLoader
 import tensorflow as tf
@@ -396,7 +396,7 @@ if __name__ == '__main__':
 
 
     if not evaluate_test_set:
-        metrics_acdc_simple.main(path_gt, path_pred, path_eval)
+        metrics_acdc.main(path_gt, path_pred, path_eval)
 
 
 
