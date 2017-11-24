@@ -12,10 +12,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 # Full paths are required because otherwise the code will not know where to look
 # when it is executed on one of the clusters.
 
-project_root = '/scratch_net/bmicdl03/code/python/acdc_segmenter_cleaned'
+at_biwi = True  # Are you running this code from the ETH Computer Vision Lab (Biwi)?
+project_root = '/scratch_net/bmicdl03/code/python/acdc_segmenter_public'
 data_root = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
 test_data_root = '/scratch_net/bmicdl03/data/ACDC_challenge_testdata/'
-local_hostnames = ['bmicdl03']  # used to check if on cluster or not
+local_hostnames = ['bmicdl03']  # used to check if on cluster or not,
+                                # enter the name of your local machine
 
 ##################################################################################
 
@@ -24,12 +26,12 @@ preproc_folder = os.path.join(project_root,'preproc_data')
 
 def setup_GPU_environment():
 
-    logging.warning('No setup proceedure defined')
-
-    # Local setup for Sun Grid Engine
-    # hostname = socket.gethostname()
-    # print('Running on %s' % hostname)
-    # if not hostname in local_hostnames:
-    #     logging.info('Setting CUDA_VISIBLE_DEVICES variable...')
-    #     os.environ["CUDA_VISIBLE_DEVICES"] = os.environ['SGE_GPU']
-    #     logging.info('SGE_GPU is %s' % os.environ['SGE_GPU'])
+    if at_biwi:
+        hostname = socket.gethostname()
+        print('Running on %s' % hostname)
+        if not hostname in local_hostnames:
+            logging.info('Setting CUDA_VISIBLE_DEVICES variable...')
+            os.environ["CUDA_VISIBLE_DEVICES"] = os.environ['SGE_GPU']
+            logging.info('SGE_GPU is %s' % os.environ['SGE_GPU'])
+    else:
+        logging.warning('!! No GPU setup defined. Perhaps you need to set CUDA_VISIBLE_DEVICES etc...?')
