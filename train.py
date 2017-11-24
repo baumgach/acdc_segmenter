@@ -210,10 +210,10 @@ def run_training(continue_run):
             logging.info('EPOCH %d' % epoch)
 
 
-            for batch in BackgroundGenerator(iterate_minibatches(images_train,
+            for batch in iterate_minibatches(images_train,
                                              labels_train,
                                              batch_size=exp_config.batch_size,
-                                             augment_batch=exp_config.augment_batch)):
+                                             augment_batch=exp_config.augment_batch):
 
             # You can run this loop with the BACKGROUND GENERATOR, which will lead to some improvements in the
             # training speed. However, be aware that currently an exception inside this loop may not be caught.
