@@ -82,6 +82,10 @@ where you have to adapt the line to match your experiment. Note that, the path m
 working directory. Giving the full path will not work.
 
 
+## Running the code on the ETH CVL (Biwi) GPU infrastructure:
+
+Instructions for setting everything up to run this code on the Biwi GPU infrastructure can be found [here](https://git.ee.ethz.ch/baumgach/biwi_tensorflow_setup_instructions)
+
 ## Known issues
 
 - If `pip install -r requirements.txt` fails while compiling `scikit-image`, try the following:
