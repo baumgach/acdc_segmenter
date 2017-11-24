@@ -86,6 +86,8 @@ working directory. Giving the full path will not work.
 
 Instructions for setting everything up to run this code on the Biwi GPU infrastructure can be found [here](https://git.ee.ethz.ch/baumgach/biwi_tensorflow_setup_instructions).
 
+Don't forget to change the `at_biwi` option in `config/system.py`! 
+
 ## Known issues
 
 - If `pip install -r requirements.txt` fails while compiling `scikit-image`, try the following:
