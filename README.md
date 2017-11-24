@@ -72,7 +72,7 @@ activated
 
 ``` tensorboard --logdir=acdc_logdir --port 8008 ```
 
-Then, navigate to [127.0.0.1:8008](http://127.0.0.1:8008) in your browser to open tensorboard.
+Then, navigate to [localhost:8008](localhost:8008) in your browser to open tensorboard.
 
 At any point during the training, or after, you can evaluate your model by typing the following:
 
@@ -84,7 +84,7 @@ working directory. Giving the full path will not work.
 
 ## Running the code on the ETH CVL (Biwi) GPU infrastructure:
 
-Instructions for setting everything up to run this code on the Biwi GPU infrastructure can be found [here](https://git.ee.ethz.ch/baumgach/biwi_tensorflow_setup_instructions)
+Instructions for setting everything up to run this code on the Biwi GPU infrastructure can be found [here](https://git.ee.ethz.ch/baumgach/biwi_tensorflow_setup_instructions).
 
 ## Known issues
 
