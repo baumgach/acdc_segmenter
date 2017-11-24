@@ -21,8 +21,8 @@ import acdc_data
 # Set the config file of the experiment you want to run here:
 
 # from experiments import FCN8_bn_wxent as exp_config
-from experiments import unet2D_bn_modified_dice as exp_config
-# from experiments import unet2D_bn_modified_wxent as exp_config
+# from experiments import unet2D_bn_modified_dice as exp_config
+from experiments import unet2D_bn_modified_wxent as exp_config
 # from experiments import unet2D_bn_modified_xent as exp_config
 # from experiments import unet2D_bn_wxent as exp_config
 # from experiments import unet3D_bn_modified_wxent as exp_config
@@ -165,7 +165,10 @@ def run_training(continue_run):
         saver_best_xent = tf.train.Saver()
 
         # Create a session for running Ops on the Graph.
-        sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True  # Do not assign whole gpu memory, just use it on the go
+        config.allow_soft_placement = True  # If a operation is not define it the default device, let it execute in another.
+        sess = tf.Session(config=config)
 
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
