@@ -5,80 +5,74 @@
 import tensorflow as tf
 import numpy as np
 
-def dice_loss(logits, labels, epsilon=1e-10, from_label=1, to_label=-1):
-    '''
-    Calculate a dice loss defined as `1-foreround_dice`. Default mode assumes that the 0 label
-     denotes background and the remaining labels are foreground. 
-    :param logits: Network output before softmax
-    :param labels: ground truth label masks
-    :param epsilon: A small constant to avoid division by 0
-    :param from_label: First label to evaluate 
-    :param to_label: Last label to evaluate
-    :return: Dice loss
-    '''
-
-    with tf.name_scope('dice_loss'):
-
-        prediction = tf.nn.softmax(logits)
-
-        intersection = tf.multiply(prediction, labels)
-        intersec_per_img_per_lab = tf.reduce_sum(intersection, axis=[1, 2])
-
-        l = tf.reduce_sum(prediction, axis=[1, 2])
-        r = tf.reduce_sum(labels, axis=[1, 2])
-
-        dices_per_subj = 2 * intersec_per_img_per_lab / (l + r + epsilon)
-
-        loss = 1 - tf.reduce_mean(tf.slice(dices_per_subj, (0, from_label), (-1, to_label)))
-
-    return loss
-
-
-def foreground_dice(logits, labels, epsilon=1e-10, from_label=1, to_label=-1):
-    '''
-    Pseudo-dice calculated from all voxels (from all subjects) and all non-background labels
-    :param logits: network output
-    :param labels: groundtruth labels (one-hot)
-    :param epsilon: for numerical stability
-    :return: scalar Dice
-    '''
-
-    struct_dice = per_structure_dice(logits, labels, epsilon)
-    foreground_dice = tf.slice(struct_dice, (0, from_label),(-1, to_label))
-
-    return tf.reduce_mean(foreground_dice)
-
-
-def per_structure_dice(logits, labels, epsilon=1e-10):
+def per_structure_dice(logits, labels, epsilon=1e-10, sum_over_batches=False, use_hard_pred=True):
     '''
     Dice coefficient per subject per label
     :param logits: network output
     :param labels: groundtruth labels (one-hot)
     :param epsilon: for numerical stability
-    :return: tensor shaped (tf.shape(logits)[0], tf.shape(logits)[-1])
+    :param sum_over_batches: Calculate intersection and union over whole batch rather than single images
+    :return: tensor shaped (tf.shape(logits)[0], tf.shape(logits)[-1]) (except when sum_over_batches is on)
     '''
 
     ndims = logits.get_shape().ndims
 
     prediction = tf.nn.softmax(logits)
-    hard_pred = tf.one_hot(tf.argmax(prediction, axis=-1), depth=tf.shape(prediction)[-1])
+    if use_hard_pred:
+        # This casts the predictions to binary 0 or 1
+        prediction = tf.one_hot(tf.argmax(prediction, axis=-1), depth=tf.shape(prediction)[-1])
 
-    intersection = tf.multiply(hard_pred, labels)
+    intersection = tf.multiply(prediction, labels)
 
     if ndims == 5:
         reduction_axes = [1,2,3]
     else:
         reduction_axes = [1,2]
 
-    intersec_per_img_per_lab = tf.reduce_sum(intersection, axis=reduction_axes)  # was [1,2]
+    if sum_over_batches:
+        reduction_axes = [0] + reduction_axes
 
-    l = tf.reduce_sum(hard_pred, axis=reduction_axes)
+    # Reduce the maps over all dimensions except the batch and the label index
+    i = tf.reduce_sum(intersection, axis=reduction_axes)
+    l = tf.reduce_sum(prediction, axis=reduction_axes)
     r = tf.reduce_sum(labels, axis=reduction_axes)
 
-    dices_per_subj = 2 * intersec_per_img_per_lab / (l + r + epsilon)
+    dice_per_img_per_lab = 2 * i / (l + r + epsilon)
 
-    return dices_per_subj
+    return dice_per_img_per_lab
 
+
+def dice_loss(logits, labels, epsilon=1e-10, only_foreground=False, sum_over_batches=True):
+    '''
+    Calculate a dice loss defined as `1-foreround_dice`. Default mode assumes that the 0 label
+     denotes background and the remaining labels are foreground. Note that the dice loss is computed
+     on the softmax output directly (i.e. (0,1)) rather than the hard labels (i.e. {0,1}). This provides
+     better gradients and facilitates training. 
+    :param logits: Network output before softmax
+    :param labels: ground truth label masks
+    :param epsilon: A small constant to avoid division by 0
+    :param only_foreground: Exclude label 0 from evaluation
+    :param sum_over_batches: calculate the intersection and union of the whole batch instead of individual images
+    :return: Dice loss
+    '''
+
+    with tf.name_scope('dice_loss'):
+
+        dice_per_img_per_lab = per_structure_dice(logits=logits,
+                                                  labels=labels,
+                                                  epsilon=epsilon,
+                                                  sum_over_batches=sum_over_batches,
+                                                  use_hard_pred=False)
+
+        if only_foreground:
+            if sum_over_batches:
+                loss = 1 - tf.reduce_mean(dice_per_img_per_lab[1:])
+            else:
+                loss = 1 - tf.reduce_mean(dice_per_img_per_lab[:, 1:])
+        else:
+            loss = 1 - tf.reduce_mean(dice_per_img_per_lab)
+
+    return loss
 
 def pixel_wise_cross_entropy_loss(logits, labels):
     '''

@@ -22,14 +22,14 @@ def loss(logits, labels, nlabels, loss_type, weight_decay=0.0):
     :param logits: The output of the neural network before the softmax
     :param labels: The ground truth labels in standard (i.e. not one-hot) format
     :param nlabels: The number of GT labels
-    :param loss_type: Can be 'weighted_crossentropy'/'crossentropy'/'dice'/'crossentropy_and_dice'
+    :param loss_type: Can be 'weighted_crossentropy'/'crossentropy'/'dice'/'dice_onlyfg'/'crossentropy_and_dice'
     :param weight_decay: The weight for the L2 regularisation of the network paramters
     :return: The total loss including weight decay, the loss without weight decay, only the weight decay 
     '''
 
     labels = tf.one_hot(labels, depth=nlabels)
 
-    with tf.variable_scope('weights_norm') as scope:
+    with tf.variable_scope('weights_norm'):
 
         weights_norm = tf.reduce_sum(
             input_tensor = weight_decay*tf.stack(
@@ -44,7 +44,9 @@ def loss(logits, labels, nlabels, loss_type, weight_decay=0.0):
     elif loss_type == 'crossentropy':
         segmentation_loss = losses.pixel_wise_cross_entropy_loss(logits, labels)
     elif loss_type == 'dice':
-        segmentation_loss = losses.dice_loss(logits, labels)
+        segmentation_loss = losses.dice_loss(logits, labels, only_foreground=False)
+    elif loss_type == 'dice_onlyfg':
+        segmentation_loss = losses.dice_loss(logits, labels, only_foreground=True)
     elif loss_type == 'crossentropy_and_dice':
         segmentation_loss = losses.pixel_wise_cross_entropy_loss(logits, labels) + 0.2*losses.dice_loss(logits, labels)
     else:
@@ -118,7 +120,7 @@ def evaluation(logits, labels, images, nlabels, loss_type):
     total_loss, nowd_loss, weights_norm = loss(logits, labels, nlabels=nlabels, loss_type=loss_type)
 
     cdice_structures = losses.per_structure_dice(logits, tf.one_hot(labels, depth=nlabels))
-    cdice_foreground = tf.slice(cdice_structures, (0,1), (-1,-1))
+    cdice_foreground = cdice_structures[:,1:]
 
     cdice = tf.reduce_mean(cdice_foreground)
 
