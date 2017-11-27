@@ -42,7 +42,7 @@ def per_structure_dice(logits, labels, epsilon=1e-10, sum_over_batches=False, us
     return dice_per_img_per_lab
 
 
-def dice_loss(logits, labels, epsilon=1e-10, only_foreground=False, sum_over_batches=True):
+def dice_loss(logits, labels, epsilon=1e-10, only_foreground=False, sum_over_batches=False):
     '''
     Calculate a dice loss defined as `1-foreround_dice`. Default mode assumes that the 0 label
      denotes background and the remaining labels are foreground. Note that the dice loss is computed
