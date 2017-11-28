@@ -9,6 +9,16 @@ Authors:
 - Christian F. Baumgartner ([email](mailto:baumgartner@vision.ee.ethz.ch))
 - Lisa M. Koch ([email](mailto:lisa.koch@inf.ethz.ch))
 
+If you find this code helpful in your research please cite the following paper:
+
+```
+@article{baumgartner2017exploration,
+  title={An Exploration of {2D} and {3D} Deep Learning Techniques for Cardiac {MR} Image Segmentation},
+  author={Baumgartner, Christian F and Koch, Lisa M and Pollefeys, Marc and Konukoglu, Ender},
+  journal={arXiv preprint arXiv:1709.04496},
+  year={2017}
+}
+```
 
 ## Requirements 
 
