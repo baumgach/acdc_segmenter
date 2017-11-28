@@ -55,13 +55,14 @@ def crop_and_concat_layer(inputs, axis=-1):
         start_crop = np.subtract(larger_size, output_size) // 2
 
         if len(output_size) == 5:  # 3D images
-            cropped_tensor = tf.slice(inputs[ii],
-                                     (0, start_crop[1], start_crop[2], start_crop[3], 0),
-                                     (-1, output_size[1], output_size[2], output_size[3], -1))
+            cropped_tensor = inputs[ii][:,
+                             start_crop[1]:start_crop[1] + output_size[1],
+                             start_crop[2]:start_crop[2] + output_size[2],
+                             start_crop[3]:start_crop[3] + output_size[3],...]
         elif len(output_size) == 4:  # 2D images
-            cropped_tensor = tf.slice(inputs[ii],
-                                     (0, start_crop[1], start_crop[2], 0),
-                                     (-1, output_size[1], output_size[2], -1))
+            cropped_tensor = inputs[ii][:,
+                             start_crop[1]:start_crop[1] + output_size[1],
+                             start_crop[2]:start_crop[2] + output_size[2], ...]
         else:
             raise ValueError('Unexpected number of dimensions on tensor: %d' % len(output_size))
 

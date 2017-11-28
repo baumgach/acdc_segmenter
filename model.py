@@ -141,22 +141,22 @@ def prepare_tensor_for_summary(img, mode, idx=0, nlabels=None):
     if mode == 'mask':
 
         if img.get_shape().ndims == 3:
-            V = tf.slice(img, (idx, 0, 0), (1, -1, -1))
+            V = img[idx, ...]
         elif img.get_shape().ndims == 4:
-            V = tf.slice(img, (idx, 0, 0, 10), (1, -1, -1, 1))
+            V = img[idx, ..., 10]
         elif img.get_shape().ndims == 5:
-            V = tf.slice(img, (idx, 0, 0, 10, 0), (1, -1, -1, 1, 1))
+            V = img[idx, ..., 10, 0]
         else:
             raise ValueError('Dont know how to deal with input dimension %d' % (img.get_shape().ndims))
 
     elif mode == 'image':
 
         if img.get_shape().ndims == 3:
-            V = tf.slice(img, (idx, 0, 0), (1, -1, -1))
+            V = img[idx, ...]
         elif img.get_shape().ndims == 4:
-            V = tf.slice(img, (idx, 0, 0, 0), (1, -1, -1, 1))
+            V = img[idx, ..., 0]
         elif img.get_shape().ndims == 5:
-            V = tf.slice(img, (idx, 0, 0, 10, 0), (1, -1, -1, 1, 1))
+            V = img[idx, ..., 10, 0]
         else:
             raise ValueError('Dont know how to deal with input dimension %d' % (img.get_shape().ndims))
 
