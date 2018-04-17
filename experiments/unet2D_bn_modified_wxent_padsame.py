@@ -13,7 +13,7 @@ target_resolution = (1.36719, 1.36719)
 nlabels = 4
 
 # Training settings
-batch_size = 10
+batch_size = 6
 learning_rate = 0.01
 optimizer_handle = tf.train.AdamOptimizer
 schedule_lr = False
