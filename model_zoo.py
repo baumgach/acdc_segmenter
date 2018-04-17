@@ -320,18 +320,7 @@ def unet2D_bn_padding_same_modified(images, training, nlabels):
     conv4_1 = layers.conv2D_layer_bn(pool3, 'conv4_1', num_filters=512//2, training=training)
     conv4_2 = layers.conv2D_layer_bn(conv4_1, 'conv4_2', num_filters=512//2, training=training)
 
-    pool4 = layers.max_pool_layer2d(conv4_2)
-
-    conv5_1 = layers.conv2D_layer_bn(pool4, 'conv5_1', num_filters=1024//2, training=training)
-    conv5_2 = layers.conv2D_layer_bn(conv5_1, 'conv5_2', num_filters=1024//2, training=training)
-
-    upconv4 = layers.deconv2D_layer_bn(conv5_2, name='upconv4', kernel_size=(4, 4), strides=(2, 2), num_filters=nlabels, training=training)
-    concat4 = tf.concat([conv4_2, upconv4], axis=3, name='concat4')
-
-    conv6_1 = layers.conv2D_layer_bn(concat4, 'conv6_1', num_filters=512//2, training=training)
-    conv6_2 = layers.conv2D_layer_bn(conv6_1, 'conv6_2', num_filters=512//2, training=training)
-
-    upconv3 = layers.deconv2D_layer_bn(conv6_2, name='upconv3', kernel_size=(4, 4), strides=(2, 2), num_filters=nlabels, training=training)
+    upconv3 = layers.deconv2D_layer_bn(conv4_2, name='upconv3', kernel_size=(4, 4), strides=(2, 2), num_filters=nlabels, training=training)
     concat3 = tf.concat([conv3_2, upconv3], axis=3, name='concat3')
 
     conv7_1 = layers.conv2D_layer_bn(concat3, 'conv7_1', num_filters=256//2, training=training)
@@ -585,17 +574,7 @@ def unet2D_bn_padding_same_modified_mp_stride1(images, training, nlabels):
     conv4_1 = layers.conv2D_layer_bn(pool3, 'conv4_1', num_filters=512//2, training=training)
     conv4_2 = layers.conv2D_layer_bn(conv4_1, 'conv4_2', num_filters=512//2, training=training)
 
-    pool4 = layers.max_pool_layer2d(conv4_2, strides=(1,1))
-
-    conv5_1 = layers.conv2D_layer_bn(pool4, 'conv5_1', num_filters=1024//2, training=training)
-    conv5_2 = layers.conv2D_layer_bn(conv5_1, 'conv5_2', num_filters=1024//2, training=training)
-
-    concat4 = tf.concat([conv4_2, conv5_2], axis=3, name='concat4')
-
-    conv6_1 = layers.conv2D_layer_bn(concat4, 'conv6_1', num_filters=512//2, training=training)
-    conv6_2 = layers.conv2D_layer_bn(conv6_1, 'conv6_2', num_filters=512//2, training=training)
-
-    concat3 = tf.concat([conv3_2, conv6_2], axis=3, name='concat3')
+    concat3 = tf.concat([conv3_2, conv4_2], axis=3, name='concat3')
 
     conv7_1 = layers.conv2D_layer_bn(concat3, 'conv7_1', num_filters=256//2, training=training)
     conv7_2 = layers.conv2D_layer_bn(conv7_1, 'conv7_2', num_filters=256//2, training=training)
@@ -635,15 +614,7 @@ def wormnet(images, training, nlabels):
     conv4_1 = layers.conv2D_layer_bn(pool3, 'conv4_1', num_filters=512//2, training=training)
     conv4_2 = layers.conv2D_layer_bn(conv4_1, 'conv4_2', num_filters=512//2, training=training)
 
-    pool4 = layers.max_pool_layer2d(conv4_2, strides=(1,1))
-
-    conv5_1 = layers.conv2D_layer_bn(pool4, 'conv5_1', num_filters=1024//2, training=training)
-    conv5_2 = layers.conv2D_layer_bn(conv5_1, 'conv5_2', num_filters=1024//2, training=training)
-
-    conv6_1 = layers.conv2D_layer_bn(conv5_2, 'conv6_1', num_filters=512//2, training=training)
-    conv6_2 = layers.conv2D_layer_bn(conv6_1, 'conv6_2', num_filters=512//2, training=training)
-
-    conv7_1 = layers.conv2D_layer_bn(conv6_2, 'conv7_1', num_filters=256//2, training=training)
+    conv7_1 = layers.conv2D_layer_bn(conv4_2, 'conv7_1', num_filters=256//2, training=training)
     conv7_2 = layers.conv2D_layer_bn(conv7_1, 'conv7_2', num_filters=256//2, training=training)
 
     conv8_1 = layers.conv2D_layer_bn(conv7_2, 'conv8_1', num_filters=128//2, training=training)
