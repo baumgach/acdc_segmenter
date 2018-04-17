@@ -8,7 +8,7 @@ model_handle = model_zoo.wormnet
 
 # Data settings
 data_mode = '2D'  # 2D or 3D
-image_size = (212, 212)
+image_size = (224, 224)
 target_resolution = (1.36719, 1.36719)
 nlabels = 4
 
