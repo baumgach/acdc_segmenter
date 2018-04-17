@@ -68,6 +68,12 @@ def VGG16_FCN_8_bn(images, training, nlabels):
 
     pool2 = layers.max_pool_layer2d(conv2_2)
 
+    ## THE ABOVE x4
+
+    ## ABSTRACTION LAYER
+
+
+
     conv3_1 = layers.conv2D_layer_bn(pool2, 'conv3_1', num_filters=256, training=training)
     conv3_2 = layers.conv2D_layer_bn(conv3_1, 'conv3_2', num_filters=256, training=training)
     conv3_3 = layers.conv2D_layer_bn(conv3_2, 'conv3_3', num_filters=256, training=training)
