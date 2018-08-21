@@ -124,6 +124,7 @@ def prepare_data(input_folder, output_file, mode, size, target_resolution, split
                 nifty_img = nib.load(file)
                 num_slices[train_test] += nifty_img.shape[2]
 
+
     # Write the small datasets
     for tt in ['test', 'train']:
         hdf5_file.create_dataset('diagnosis_%s' % tt, data=np.asarray(diag_list[tt], dtype=np.uint8))
