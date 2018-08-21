@@ -113,69 +113,69 @@ def dropout_layer(bottom, name, training, keep_prob=0.5):
     return tf.nn.dropout(bottom, keep_prob=keep_prob_pl, name=name)
 
 
-# def batch_normalisation_layer(bottom, name, training):
-#     '''
-#     Alternative wrapper for tensorflows own batch normalisation function. I had some issues with 3D convolutions
-#     when using this. The version below works with 3D convs as well.
-#     :param bottom: Input layer (should be before activation)
-#     :param name: A name for the computational graph
-#     :param training: A tf.bool specifying if the layer is executed at training or testing time
-#     :return: Batch normalised activation
-#     '''
-#
-#     h_bn = tf.contrib.layers.batch_norm(inputs=bottom, decay=0.99, epsilon=1e-3, is_training=training,
-#                                         scope=name, center=True, scale=True)
-#
-#     return h_bn
-
-#
-def batch_normalisation_layer(bottom, name, training, moving_average_decay=0.99, epsilon=1e-3):
+def batch_normalisation_layer(bottom, name, training):
     '''
-    Batch normalisation layer (Adapted from https://github.com/tensorflow/tensorflow/issues/1122)
+    Alternative wrapper for tensorflows own batch normalisation function. I had some issues with 3D convolutions
+    when using this. The version below works with 3D convs as well.
     :param bottom: Input layer (should be before activation)
     :param name: A name for the computational graph
     :param training: A tf.bool specifying if the layer is executed at training or testing time
     :return: Batch normalised activation
     '''
 
-    with tf.variable_scope(name):
+    h_bn = tf.contrib.layers.batch_norm(inputs=bottom, decay=0.99, epsilon=1e-3, is_training=training,
+                                        scope=name, center=True, scale=True)
 
-        n_out = bottom.get_shape().as_list()[-1]
-        tensor_dim = len(bottom.get_shape().as_list())
+    return h_bn
 
-        if tensor_dim == 2:
-            # must be a dense layer
-            moments_over_axes = [0]
-        elif tensor_dim == 4:
-            # must be a 2D conv layer
-            moments_over_axes = [0, 1, 2]
-        elif tensor_dim == 5:
-            # must be a 3D conv layer
-            moments_over_axes = [0, 1, 2, 3]
-        else:
-            # is not likely to be something reasonable
-            raise ValueError('Tensor dim %d is not supported by this batch_norm layer' % tensor_dim)
-
-        init_beta = tf.constant(0.0, shape=[n_out], dtype=tf.float32)
-        init_gamma = tf.constant(1.0, shape=[n_out], dtype=tf.float32)
-        beta = tf.get_variable(name='beta', dtype=tf.float32, initializer=init_beta, regularizer=None,
-                               trainable=True)
-        gamma = tf.get_variable(name='gamma', dtype=tf.float32, initializer=init_gamma, regularizer=None,
-                                trainable=True)
-
-        batch_mean, batch_var = tf.nn.moments(bottom, moments_over_axes, name='moments')
-        ema = tf.train.ExponentialMovingAverage(decay=moving_average_decay)
-
-        def mean_var_with_update():
-            ema_apply_op = ema.apply([batch_mean, batch_var])
-            with tf.control_dependencies([ema_apply_op]):
-                return tf.identity(batch_mean), tf.identity(batch_var)
-
-        mean, var = tf.cond(training, mean_var_with_update,
-                            lambda: (ema.average(batch_mean), ema.average(batch_var)))
-        normalised = tf.nn.batch_normalization(bottom, mean, var, beta, gamma, epsilon)
-
-        return normalised
+#
+# def batch_normalisation_layer(bottom, name, training, moving_average_decay=0.99, epsilon=1e-3):
+#     '''
+#     Batch normalisation layer (Adapted from https://github.com/tensorflow/tensorflow/issues/1122)
+#     :param bottom: Input layer (should be before activation)
+#     :param name: A name for the computational graph
+#     :param training: A tf.bool specifying if the layer is executed at training or testing time
+#     :return: Batch normalised activation
+#     '''
+#
+#     with tf.variable_scope(name):
+#
+#         n_out = bottom.get_shape().as_list()[-1]
+#         tensor_dim = len(bottom.get_shape().as_list())
+#
+#         if tensor_dim == 2:
+#             # must be a dense layer
+#             moments_over_axes = [0]
+#         elif tensor_dim == 4:
+#             # must be a 2D conv layer
+#             moments_over_axes = [0, 1, 2]
+#         elif tensor_dim == 5:
+#             # must be a 3D conv layer
+#             moments_over_axes = [0, 1, 2, 3]
+#         else:
+#             # is not likely to be something reasonable
+#             raise ValueError('Tensor dim %d is not supported by this batch_norm layer' % tensor_dim)
+#
+#         init_beta = tf.constant(0.0, shape=[n_out], dtype=tf.float32)
+#         init_gamma = tf.constant(1.0, shape=[n_out], dtype=tf.float32)
+#         beta = tf.get_variable(name='beta', dtype=tf.float32, initializer=init_beta, regularizer=None,
+#                                trainable=True)
+#         gamma = tf.get_variable(name='gamma', dtype=tf.float32, initializer=init_gamma, regularizer=None,
+#                                 trainable=True)
+#
+#         batch_mean, batch_var = tf.nn.moments(bottom, moments_over_axes, name='moments')
+#         ema = tf.train.ExponentialMovingAverage(decay=moving_average_decay)
+#
+#         def mean_var_with_update():
+#             ema_apply_op = ema.apply([batch_mean, batch_var])
+#             with tf.control_dependencies([ema_apply_op]):
+#                 return tf.identity(batch_mean), tf.identity(batch_var)
+#
+#         mean, var = tf.cond(training, mean_var_with_update,
+#                             lambda: (ema.average(batch_mean), ema.average(batch_var)))
+#         normalised = tf.nn.batch_normalization(bottom, mean, var, beta, gamma, epsilon)
+#
+#         return normalised
 
 ### FEED_FORWARD LAYERS ##############################################################################
 
