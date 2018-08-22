@@ -359,10 +359,20 @@ def load_and_maybe_process_data(input_folder,
     utils.makefolder(preprocessing_folder)
 
     if not os.path.exists(data_file_path) or force_overwrite:
+
         logging.info('This configuration of mode, size and target resolution has not yet been preprocessed')
         logging.info('Preprocessing now!')
         prepare_data(input_folder, data_file_path, mode, size, target_resolution, split_test_train=split_test_train)
+
+    elif os.path.getsize(data_file_path) < 10485760:  # If file is smaller than 10MB
+
+        logging.warning('WARNING: Your preprocessed data file is smaller than 10MB. It is likely that something went '
+                        'wrong with the preprocessing.')
+        logging.warning("To make sure, delete '%s' and run the code again")
+        logging.info('Continuing anyway...')
+
     else:
+        
         logging.info('Already preprocessed this configuration. Loading now!')
 
     return h5py.File(data_file_path, 'r')
