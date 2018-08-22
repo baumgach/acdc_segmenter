@@ -56,21 +56,19 @@ def dice_loss(logits, labels, epsilon=1e-10, only_foreground=False, sum_over_bat
     :return: Dice loss
     '''
 
-    with tf.name_scope('dice_loss'):
+    dice_per_img_per_lab = per_structure_dice(logits=logits,
+                                              labels=labels,
+                                              epsilon=epsilon,
+                                              sum_over_batches=sum_over_batches,
+                                              use_hard_pred=False)
 
-        dice_per_img_per_lab = per_structure_dice(logits=logits,
-                                                  labels=labels,
-                                                  epsilon=epsilon,
-                                                  sum_over_batches=sum_over_batches,
-                                                  use_hard_pred=False)
-
-        if only_foreground:
-            if sum_over_batches:
-                loss = 1 - tf.reduce_mean(dice_per_img_per_lab[1:])
-            else:
-                loss = 1 - tf.reduce_mean(dice_per_img_per_lab[:, 1:])
+    if only_foreground:
+        if sum_over_batches:
+            loss = 1 - tf.reduce_mean(dice_per_img_per_lab[1:])
         else:
-            loss = 1 - tf.reduce_mean(dice_per_img_per_lab)
+            loss = 1 - tf.reduce_mean(dice_per_img_per_lab[:, 1:])
+    else:
+        loss = 1 - tf.reduce_mean(dice_per_img_per_lab)
 
     return loss
 
