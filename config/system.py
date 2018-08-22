@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 # Full paths are required because otherwise the code will not know where to look
 # when it is executed on one of the clusters.
 
-at_biwi = True  # Are you running this code from the ETH Computer Vision Lab (Biwi)?
+at_biwi = False  # Are you running this code from the ETH Computer Vision Lab (Biwi)?
 project_root = '/scratch_net/bmicdl03/code/python/acdc_segmenter_public'
 data_root = '/scratch_net/bmicdl03/data/ACDC_challenge_20170617/'
 test_data_root = '/scratch_net/bmicdl03/data/ACDC_challenge_testdata/'

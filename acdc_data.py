@@ -372,7 +372,7 @@ def load_and_maybe_process_data(input_folder,
         logging.info('Continuing anyway...')
 
     else:
-        
+
         logging.info('Already preprocessed this configuration. Loading now!')
 
     return h5py.File(data_file_path, 'r')
