@@ -45,13 +45,12 @@ Next, install the required packages listed in the `requirements.txt` file:
 
 Then, install tensorflow:
 
-``` pip install tensorflow==1.2 ```
+``` pip install tensorflow==1.8 ```
 or
-``` pip install tensorflow-gpu==1.2 ```
+``` pip install tensorflow-gpu==1.8 ```
 
 depending if you are setting up your GPU environment or CPU environment. The code was also
-tested with tensorflow 1.1 if for some reason you prefer that version. Tensorflow 1.3 is currently causing
-trouble on our local machines, so we couldn't test this version yet. 
+tested with tensorflow 1.1 and tensorflow 1.2 if for some reason you prefer that version.
 
 WARNING: Installing tensorflow before the requirements.txt will lead to weird errors while compiling `scikit-image` in `pip install -r requirements`. Make sure you install tensorflow *after* the requirements. 
 If you run into errors anyways try running `pip install --upgrade cython` and then reruning `pip install -r requirements.txt`. 
