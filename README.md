@@ -20,6 +20,12 @@ If you find this code helpful in your research please cite the following paper:
 }
 ```
 
+## Pre-trained weights
+
+Pretrained weights for the best performing method can be found here: (https://git.ee.ethz.ch/baumgach/acdc_pretrained_weights)
+
+It was not possible to upload all experiments due to size limits. However, the pretrained weights for the other experiments can be requested via email from (baumgartner@vision.ee.ethz.ch). 
+
 ## Requirements 
 
 - Python 3.4 (only tested with 3.4.3)
