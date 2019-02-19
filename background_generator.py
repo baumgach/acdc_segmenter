@@ -19,7 +19,7 @@ import threading
 import queue
 
 class BackgroundGenerator(threading.Thread):
-    def __init__(self, generator,max_prefetch = 1):
+    def __init__(self, generator,max_prefetch=1):
         threading.Thread.__init__(self)
         self.queue = queue.Queue(max_prefetch)
         self.generator = generator

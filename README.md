@@ -28,10 +28,8 @@ It was not possible to upload all experiments due to size limits. However, the p
 
 ## Requirements 
 
-- Python 3.4 (only tested with 3.4.3)
-- Tensorflow >= 1.0 (tested with 1.1.0, and 1.2.0)
-- The remainder of the requirements are given in `requirements.txt`
-
+- Python 3.5 (tested with Python 3.5.3)
+- The package requirements are given in `requirements.txt`
 
 ## Getting the code
 
@@ -42,25 +40,12 @@ Clone the repository by typing
 
 ## Installing required Python packages
 
-Create an environment with Python 3.4. If you use virutalenv it 
+Create an environment with Python 3.5. If you use virutalenv it 
 might be necessary to first upgrade pip (``` pip install --upgrade pip ```).
 
 Next, install the required packages listed in the `requirements.txt` file:
 
 ``` pip install -r requirements.txt ```
-
-Then, install tensorflow:
-
-``` pip install tensorflow==1.8 ```
-or
-``` pip install tensorflow-gpu==1.8 ```
-
-depending if you are setting up your GPU environment or CPU environment. The code was also
-tested with tensorflow 1.1 and tensorflow 1.2 if for some reason you prefer that version.
-
-WARNING: Installing tensorflow before the requirements.txt will lead to weird errors while compiling `scikit-image` in `pip install -r requirements`. Make sure you install tensorflow *after* the requirements. 
-If you run into errors anyways try running `pip install --upgrade cython` and then reruning `pip install -r requirements.txt`. 
-
 
 ## Download the ACDC challenge data
 
@@ -105,9 +90,4 @@ Don't forget to change the `at_biwi` option in `config/system.py`!
 
 ## Known issues
 
-- If `pip install -r requirements.txt` fails while compiling `scikit-image`, try the following:
-    - Make sure you install `tensorflow` _after_ the `requirements.txt`
-    - If that didn't solve the issue, try running `pip install --upgrade cython` seperately, and then run `pip install -r requirements.txt` again.
-     
-- There seems to be an issue compiling scikit-image when using Python 3.5. If this is happening make sure you are using Python 3.4. 
-
+None at the moment

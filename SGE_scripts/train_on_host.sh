@@ -8,9 +8,9 @@
 # Author: Christian F. Baumgartner (c.f.baumgartner@gmail.com)
 
 ## SET THE FOLLOWING VARIABLES ACCORDING TO YOUR SYSTEM ##
-CUDA_HOME=/scratch_net/bmicdl03/libs/cuda-8.0-bmic
+CUDA_HOME=/scratch_net/bmicdl03/libs/cuda-9.0
 PROJECT_HOME=/scratch_net/bmicdl03/code/python/acdc_segmenter_public/
-VIRTUAL_ENV_PATH=/scratch_net/bmicdl03/code/python/environments/tensorflow-gpu/
+VIRTUAL_ENV_PATH=/scratch_net/bmicdl03/code/python/environments/acdc-env/
 
 ## SGE Variables:
 #
