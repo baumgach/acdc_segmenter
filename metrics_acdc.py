@@ -106,9 +106,20 @@ def compute_metrics_on_directories_raw(dir_gt, dir_pred):
 
             vol_list.append(volpred)
             vol_err_list.append(volpred - volgt)
-            hausdorff_list.append(hd(gt_binary, pred_binary, voxelspacing=zooms, connectivity=1))
-            assd_list.append(assd(pred_binary, gt_binary, voxelspacing=zooms, connectivity=1))
-            dices_list.append(dc(gt_binary, pred_binary))
+
+            if np.sum(gt_binary) == 0 and np.sum(pred_binary) == 0:
+                dices_list.append(1)
+                assd_list.append(0)
+                hausdorff_list.append(0)
+            elif np.sum(pred_binary) > 0 and np.sum(gt_binary) == 0 or np.sum(pred_binary) == 0 and np.sum(gt_binary) > 0:
+                logging.warning('Structure missing in either GT (x)or prediction. ASSD and HD will not be accurate.')
+                dices_list.append(0)
+                assd_list.append(1)
+                hausdorff_list.append(1)
+            else:
+                hausdorff_list.append(hd(gt_binary, pred_binary, voxelspacing=zooms, connectivity=1))
+                assd_list.append(assd(pred_binary, gt_binary, voxelspacing=zooms, connectivity=1))
+                dices_list.append(dc(gt_binary, pred_binary))
 
             cardiac_phase.append(os.path.basename(p_gt).split('.nii.gz')[0].split('_')[-1])
             file_names.append(os.path.basename(p_pred))
