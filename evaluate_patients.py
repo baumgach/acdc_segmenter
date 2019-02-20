@@ -239,26 +239,27 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
 
                             start_time = time.time()
                             mask_out, logits_out = sess.run([mask_pl, softmax_pl], feed_dict={images_pl: network_input})
+
                             logging.info('Classified 3D: %f secs' % (time.time() - start_time))
 
-                            prediction_nzs = mask_out[0, :, :, stack_from:stack_to]  # non-zero-slices
+                            prediction_nzs = logits_out[0, :, :, stack_from:stack_to, ...]  # non-zero-slices
 
                             if not prediction_nzs.shape[2] == nz_curr:
                                 raise ValueError('sizes mismatch')
 
                             # ASSEMBLE BACK THE SLICES
-                            prediction_scaled = np.zeros(vol_scaled.shape)  # last dim is for logits classes
+                            prediction_scaled = np.zeros(list(vol_scaled.shape) + [num_channels])  # last dim is for logits classes
 
                             # insert cropped region into original image again
                             if x > nx and y > ny:
-                                prediction_scaled[x_s:x_s + nx, y_s:y_s + ny, :] = prediction_nzs
+                                prediction_scaled[x_s:x_s + nx, y_s:y_s + ny, :, ...] = prediction_nzs
                             else:
                                 if x <= nx and y > ny:
-                                    prediction_scaled[:, y_s:y_s + ny, :] = prediction_nzs[x_c:x_c + x, :, :]
+                                    prediction_scaled[:, y_s:y_s + ny, :, ...] = prediction_nzs[x_c:x_c + x, :, :, ...]
                                 elif x > nx and y <= ny:
-                                    prediction_scaled[x_s:x_s + nx, :, :] = prediction_nzs[:, y_c:y_c + y, :]
+                                    prediction_scaled[x_s:x_s + nx, :, : ...] = prediction_nzs[:, y_c:y_c + y, : ...]
                                 else:
-                                    prediction_scaled[:, :, :] = prediction_nzs[x_c:x_c + x, y_c:y_c + y, :]
+                                    prediction_scaled[:, :, : ...] = prediction_nzs[x_c:x_c + x, y_c:y_c + y, : ...]
 
                             logging.info('Prediction_scaled mean %f' % (np.mean(prediction_scaled)))
 
@@ -269,8 +270,6 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
                                                           mode='constant')
                             prediction = np.argmax(prediction, axis=-1)
                             prediction_arr = np.asarray(prediction, dtype=np.uint8)
-
-
 
                         # This is the same for 2D and 3D again
                         if do_postprocessing:
