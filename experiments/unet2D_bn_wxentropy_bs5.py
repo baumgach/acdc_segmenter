@@ -1,10 +1,10 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet2D_bn_modified_xent'
+experiment_name = 'unet2D_bn_wxent'
 
 # Model settings
-model_handle = model_zoo.unet2D_bn_modified
+model_handle = model_zoo.unet2D_bn
 
 # Data settings
 data_mode = '2D'  # 2D or 3D
@@ -20,7 +20,7 @@ schedule_lr = False
 warmup_training = True
 weight_decay = 0.00000
 momentum = None
-loss_type = 'crossentropy'  # crossentropy/weighted_crossentropy/dice/dice_onlyfg
+loss_type = 'weighted_crossentropy'  # crossentropy/weighted_crossentropy/dice/dice_onlyfg
 
 # Augmentation settings
 augment_batch = False
