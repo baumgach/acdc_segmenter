@@ -4,3 +4,5 @@ preproc_data
 src
 .idea
 *.pyc
+.vscode/
+data/

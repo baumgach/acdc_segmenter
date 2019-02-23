@@ -24,8 +24,8 @@ import acdc_data
 # from experiments import unet2D_bn_modified_dice as exp_config
 # from experiments import unet2D_bn_modified_wxent as exp_config
 # from experiments import unet2D_bn_modified_xent as exp_config
-# from experiments import unet2D_bn_wxent as exp_config
-from experiments import unet3D_bn_modified_wxent as exp_config
+from experiments import unet2D_bn_wxent as exp_config
+# from experiments import unet3D_bn_modified_wxent as exp_config
 
 ########################################################################################
 
