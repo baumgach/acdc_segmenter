@@ -111,11 +111,12 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
 
                                 slice_img = np.squeeze(img[:,:,zz])
                                 slice_rescaled = transform.rescale(slice_img,
-                                                                   scale_vector,
-                                                                   order=1,
-                                                                   preserve_range=True,
-                                                                   multichannel=False,
-                                                                   mode='constant')
+                                                                scale_vector,
+                                                                order=1,
+                                                                preserve_range=True,
+                                                                multichannel=False,
+                                                                anti_aliasing=True,
+                                                                mode='constant')
 
                                 x, y = slice_rescaled.shape
 
@@ -161,6 +162,7 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
                                                                   (mask.shape[0], mask.shape[1], num_channels),
                                                                   order=1,
                                                                   preserve_range=True,
+                                                                  anti_aliasing=True,
                                                                   mode='constant')
                                 else:  # This can occasionally lead to wrong volume size, therefore if gt_exists
                                        # we use the gt mask size for resizing.
@@ -169,6 +171,7 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
                                                                    order=1,
                                                                    preserve_range=True,
                                                                    multichannel=False,
+                                                                   anti_aliasing=True,
                                                                    mode='constant')
 
                                 # prediction = transform.resize(slice_predictions,
