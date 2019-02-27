@@ -20,13 +20,13 @@ import acdc_data
 ### EXPERIMENT CONFIG FILE #############################################################
 # Set the config file of the experiment you want to run here:
 
-# from experiments import FCN8_bn_wxent as exp_config
+from experiments import FCN8_bn_wxent as exp_config
 # from experiments import unet2D_bn_modified_dice as exp_config
 # from experiments import unet2D_bn_modified_wxent as exp_config
 # from experiments import unet2D_bn_modified_xent as exp_config
 # from experiments import unet2D_bn_wxent as exp_config
 # from experiments import unet3D_bn_modified_wxent as exp_config
-from experiments import unet2D_bn_wxentropy_bs5 as exp_config
+# from experiments import unet2D_bn_wxentropy_bs5 as exp_config
 
 ########################################################################################
 
