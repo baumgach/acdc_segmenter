@@ -301,8 +301,10 @@ def run_training(continue_run):
                         loss_history = []
 
                     if train_loss <= last_train:  # best_train:
+                        no_improvement_counter = 0
                         logging.info('Decrease in training error!')
                     else:
+                        no_improvement_counter = no_improvement_counter+1
                         logging.info('No improvment in training error for %d steps' % no_improvement_counter)
 
                     last_train = train_loss
