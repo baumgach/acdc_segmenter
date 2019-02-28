@@ -25,7 +25,7 @@ VIRTUAL_ENV_PATH=/scratch_net/bmicdl03/code/python/environments/acdc-env/
 
 # Host and gpu settings
 #$ -l gpu
-##$ -l hostname=bmicgpu01  ## <-------------- Comment in or out to force a specific machine
+#$ -l hostname=bmicgpu01  ## <-------------- Comment in or out to force a specific machine
 
 ## stderr and stdout are merged together to stdout
 #$ -j y

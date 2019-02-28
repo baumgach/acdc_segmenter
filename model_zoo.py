@@ -416,8 +416,6 @@ def unet2D_bn_modified(images, training, nlabels):
 
     return pred
 
-
-
 def unet2D_bn(images, training, nlabels):
 
     images_padded = tf.pad(images, [[0,0], [92, 92], [92, 92], [0,0]], 'CONSTANT')
