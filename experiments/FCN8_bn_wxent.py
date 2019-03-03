@@ -23,10 +23,10 @@ momentum = None
 loss_type = 'weighted_crossentropy'  # crossentropy/weighted_crossentropy/dice/dice_onlyfg
 
 # Augmentation settings
-augment_batch = False
+augment_batch = True
 do_rotations = True
 do_scaleaug = False
-do_fliplr = False
+do_fliplr = True
 
 # Rarely changed settings
 use_data_fraction = False  # Should normally be False
