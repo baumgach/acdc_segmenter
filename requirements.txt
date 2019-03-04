@@ -20,7 +20,6 @@ numpy==1.16.1
 opencv-python==4.0.0.21
 pandas==0.24.1
 Pillow==5.4.1
-# pkg-resources==0.0.0
 protobuf==3.6.1
 pyparsing==2.3.1
 python-dateutil==2.8.0
