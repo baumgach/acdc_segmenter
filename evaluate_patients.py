@@ -34,6 +34,8 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
     image_tensor_shape = [batch_size] + list(exp_config.image_size) + [1]
     images_pl = tf.placeholder(tf.float32, shape=image_tensor_shape, name='images')
 
+    # According to the experiment config, pick a model and predict the output
+    # TODO: Implement majority voting using 3 models.
     mask_pl, softmax_pl = model.predict(images_pl, exp_config)
     saver = tf.train.Saver()
     init = tf.global_variables_initializer()
@@ -111,11 +113,12 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
 
                                 slice_img = np.squeeze(img[:,:,zz])
                                 slice_rescaled = transform.rescale(slice_img,
-                                                                   scale_vector,
-                                                                   order=1,
-                                                                   preserve_range=True,
-                                                                   multichannel=False,
-                                                                   mode='constant')
+                                                                scale_vector,
+                                                                order=1,
+                                                                preserve_range=True,
+                                                                multichannel=False,
+                                                                anti_aliasing=True,
+                                                                mode='constant')
 
                                 x, y = slice_rescaled.shape
 
@@ -161,6 +164,7 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
                                                                   (mask.shape[0], mask.shape[1], num_channels),
                                                                   order=1,
                                                                   preserve_range=True,
+                                                                  anti_aliasing=True,
                                                                   mode='constant')
                                 else:  # This can occasionally lead to wrong volume size, therefore if gt_exists
                                        # we use the gt mask size for resizing.
@@ -169,6 +173,7 @@ def score_data(input_folder, output_folder, model_path, exp_config, do_postproce
                                                                    order=1,
                                                                    preserve_range=True,
                                                                    multichannel=False,
+                                                                   anti_aliasing=True,
                                                                    mode='constant')
 
                                 # prediction = transform.resize(slice_predictions,
@@ -354,7 +359,7 @@ if __name__ == '__main__':
     model_path = os.path.join(base_path, args.EXP_PATH)
     config_file = glob.glob(model_path + '/*py')[0]
     config_module = config_file.split('/')[-1].rstrip('.py')
-    exp_config = SourceFileLoader(config_module, os.path.join(config_file)).load_module()
+    exp_config = SourceFileLoader(fullname=config_module, path=os.path.join(config_file)).load_module()
 
     if evaluate_test_set:
         logging.warning('EVALUATING ON TEST SET')

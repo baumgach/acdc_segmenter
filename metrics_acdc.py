@@ -327,9 +327,9 @@ def main(path_gt, path_pred, eval_dir):
         boxplot_metrics(df, eval_dir)
 
         logging.info('------------Average Dice Figures----------')
-        logging.info('Dice 1: %f' % np.mean(df.loc[df['struc'] == 'LV']['dice']))
-        logging.info('Dice 2: %f' % np.mean(df.loc[df['struc'] == 'RV']['dice']))
-        logging.info('Dice 3: %f' % np.mean(df.loc[df['struc'] == 'Myo']['dice']))
+        logging.info('Dice 1 (LV): %f' % np.mean(df.loc[df['struc'] == 'LV']['dice']))
+        logging.info('Dice 2 (RC): %f' % np.mean(df.loc[df['struc'] == 'RV']['dice']))
+        logging.info('Dice 3 (Myo): %f' % np.mean(df.loc[df['struc'] == 'Myo']['dice']))
         logging.info('Mean dice: %f' % np.mean(np.mean(df['dice'])))
         logging.info('------------------------------------------')
 
