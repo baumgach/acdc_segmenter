@@ -47,6 +47,17 @@ Next, install the required packages listed in the `requirements.txt` file:
 
 ``` pip install -r requirements.txt ```
 
+The tensorflow packages are not part of the requirements file because you may want to toggle the CPU and GPU version. For the GPU version type
+
+``` pip install tensorflow-gpu==1.13```
+
+If you want to use the CPU version use the following command. 
+
+``` pip install tensorflow==1.13```
+
+If you want to go back and forth between GPU and CPU it probably makes sense to make two separate environments which are identical except
+for the tensorflow version. 
+
 ## Download the ACDC challenge data
 
 If you don't have access to the data already you can sign up and download it from this [webpage](http://acdc.creatis.insa-lyon.fr/#challenges).
