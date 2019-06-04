@@ -29,6 +29,7 @@ It was not possible to upload all experiments due to size limits. However, the p
 ## Requirements 
 
 - Python 3.5 (tested with Python 3.5.3)
+- Tensorflow (tested with tensorflow 1.12)
 - The package requirements are given in `requirements.txt`
 
 ## Getting the code
@@ -49,11 +50,11 @@ Next, install the required packages listed in the `requirements.txt` file:
 
 The tensorflow packages are not part of the requirements file because you may want to toggle the CPU and GPU version. For the GPU version type
 
-``` pip install tensorflow-gpu==1.13```
+``` pip install tensorflow-gpu==1.12```
 
 If you want to use the CPU version use the following command. 
 
-``` pip install tensorflow==1.13```
+``` pip install tensorflow==1.12```
 
 If you want to go back and forth between GPU and CPU it probably makes sense to make two separate environments which are identical except
 for the tensorflow version. 
