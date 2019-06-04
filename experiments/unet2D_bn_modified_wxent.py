@@ -1,7 +1,7 @@
 import model_zoo
 import tensorflow as tf
 
-experiment_name = 'unet2D_bn_modified_wxent_bn'
+experiment_name = 'unet2D_bn_modified_wxent_bn_test'
 
 # Model settings
 model_handle = model_zoo.unet2D_bn_modified
