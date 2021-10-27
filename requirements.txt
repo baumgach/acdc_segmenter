@@ -3,7 +3,7 @@ astor==0.7.1
 bz2file==0.98
 cloudpickle==0.8.0
 cycler==0.10.0
-dask==1.1.1
+dask==2021.10.0
 decorator==4.3.2
 gast==0.2.2
 grpcio==1.18.0
