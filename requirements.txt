@@ -16,7 +16,7 @@ matplotlib==3.0.2
 -e git+https://github.com/lmkoch/medpy/@b06b6decf41c63489e746f6a83e8fa5ff509adfa#egg=MedPy
 networkx==2.2
 nibabel==2.3.3
-numpy==1.16.1
+numpy==1.22.0
 opencv-python==4.0.0.21
 pandas==0.24.1
 Pillow==5.4.1
